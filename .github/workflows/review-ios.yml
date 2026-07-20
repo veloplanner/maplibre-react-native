@@ -13,13 +13,13 @@ jobs:
         working-directory: ./examples/react-native-app
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup
         uses: ./.github/actions/setup
 
       - name: Cache Cocoapods
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: cocoapods-cache
         with:
           path: ./examples/react-native-app/ios/Pods
@@ -32,7 +32,7 @@ jobs:
         run: yarn ios:pod-install
 
       - name: Cache Build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: ios-build-cache
         with:
           path: ./examples/react-native-app/ios/build
@@ -65,7 +65,7 @@ jobs:
         working-directory: ./examples/react-native-app
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Homebrew
         id: set-up-homebrew
