@@ -12,5 +12,9 @@
       "Bash(git log)",
       "Bash(git log:*)"
     ]
+  },
+  "enabledPlugins": {
+    "react-native-best-practices@callstack-agent-skills": true,
+    "expo@claude-plugins-official": true
   }
 }
