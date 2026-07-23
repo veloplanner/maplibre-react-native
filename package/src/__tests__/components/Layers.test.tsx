@@ -116,4 +116,46 @@ describe("Layer Components", () => {
       });
     });
   });
+
+  describe("style memoization", () => {
+    const renderLineLayer = (paint: { "line-opacity": number }) => (
+      <Layer
+        type="line"
+        id="memo-layer"
+        source="memo-source"
+        paint={{ "line-color": "red", ...paint }}
+        layout={{ "line-cap": "round" }}
+      />
+    );
+
+    test("keeps reactStyle identity when style props are value-equal", () => {
+      const { queryByTestId, rerender } = render(
+        renderLineLayer({ "line-opacity": 0.9 }),
+      );
+      const firstReactStyle =
+        queryByTestId("mlrn-line-layer")!.props.reactStyle;
+
+      // Fresh but value-equal inline style objects must not produce a new
+      // native style prop.
+      rerender(renderLineLayer({ "line-opacity": 0.9 }));
+
+      expect(queryByTestId("mlrn-line-layer")!.props.reactStyle).toBe(
+        firstReactStyle,
+      );
+    });
+
+    test("recomputes reactStyle when style values change", () => {
+      const { queryByTestId, rerender } = render(
+        renderLineLayer({ "line-opacity": 0.9 }),
+      );
+      const firstReactStyle =
+        queryByTestId("mlrn-line-layer")!.props.reactStyle;
+
+      rerender(renderLineLayer({ "line-opacity": 0.3 }));
+
+      const nextReactStyle = queryByTestId("mlrn-line-layer")!.props.reactStyle;
+      expect(nextReactStyle).not.toBe(firstReactStyle);
+      expect(nextReactStyle).not.toStrictEqual(firstReactStyle);
+    });
+  });
 });

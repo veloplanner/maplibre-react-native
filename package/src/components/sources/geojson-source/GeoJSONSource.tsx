@@ -9,6 +9,7 @@ import {
   type ReactNode,
   type Ref,
   useImperativeHandle,
+  useMemo,
   useRef,
 } from "react";
 import { type ReactNativeElement } from "react-native";
@@ -228,11 +229,18 @@ export const GeoJSONSource = memo(
           : null,
     }));
 
+    // Serializing large FeatureCollections is expensive, so only re-stringify
+    // when `data` actually changes instead of on every render.
+    const dataString = useMemo(
+      () => (typeof data === "string" ? data : JSON.stringify(data)),
+      [data],
+    );
+
     return (
       <GeoJSONSourceNativeComponent
         ref={nativeRef}
         id={frozenId}
-        data={typeof data === "string" ? data : JSON.stringify(data)}
+        data={dataString}
         hasOnPress={!!props.onPress}
         {...props}
       >

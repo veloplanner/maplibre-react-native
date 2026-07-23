@@ -48,6 +48,58 @@ describe("GeoJSONSource", () => {
     });
   });
 
+  describe("data serialization", () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    test("re-stringifies only when data changes", () => {
+      const data: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: [],
+      };
+      const stringifySpy = jest.spyOn(JSON, "stringify");
+      const stringifyCallsWith = (value: unknown) =>
+        stringifySpy.mock.calls.filter((call) => call[0] === value).length;
+
+      const { getByTestId, rerender } = render(
+        <GeoJSONSource testID={TEST_ID} id="test-geojson-source" data={data} />,
+      );
+
+      expect(stringifyCallsWith(data)).toBe(1);
+      const firstDataProp = getByTestId(TEST_ID).props.data;
+
+      rerender(
+        <GeoJSONSource testID={TEST_ID} id="test-geojson-source" data={data} />,
+      );
+
+      expect(stringifyCallsWith(data)).toBe(1);
+      expect(getByTestId(TEST_ID).props.data).toBe(firstDataProp);
+
+      const nextData: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [1, 2] },
+            properties: {},
+          },
+        ],
+      };
+
+      rerender(
+        <GeoJSONSource
+          testID={TEST_ID}
+          id="test-geojson-source"
+          data={nextData}
+        />,
+      );
+
+      expect(stringifyCallsWith(nextData)).toBe(1);
+      expect(JSON.parse(getByTestId(TEST_ID).props.data)).toEqual(nextData);
+    });
+  });
+
   describe("imperative methods", () => {
     test("are exposed on the ref", () => {
       const { sourceRef } = renderGeoJSONSource();

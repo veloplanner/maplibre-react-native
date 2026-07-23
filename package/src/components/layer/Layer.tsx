@@ -220,59 +220,72 @@ export type LayerProps =
 export const Layer = ({ id, ...props }: LayerProps) => {
   const frozenId = useFrozenId(id);
 
-  const nativeProps = useMemo(() => {
-    const {
-      type: layerType,
-      "source-layer": sourceLayer,
-      filter,
-      style,
-      paint,
-      layout,
-      beforeId,
-      afterId,
-      layerIndex,
-      ...rest
-    } = {
-      "source-layer": undefined,
-      filter: undefined,
-      paint: undefined,
-      layout: undefined,
-      ...props,
-    };
+  const {
+    type: layerType,
+    "source-layer": sourceLayer,
+    filter,
+    style,
+    paint,
+    layout,
+    beforeId,
+    afterId,
+    layerIndex,
+    ...rest
+  } = {
+    "source-layer": undefined,
+    filter: undefined,
+    paint: undefined,
+    layout: undefined,
+    ...props,
+  };
 
-    if (__DEV__ && style && !deprecationWarned) {
-      deprecationWarned = true;
+  if (__DEV__ && style && !deprecationWarned) {
+    deprecationWarned = true;
 
-      console.warn(
-        "[@maplibre/maplibre-react-native] The `style` prop is deprecated. " +
-          "Use `paint` and `layout` props instead. `style` will be removed in v12.",
-      );
-    }
-
-    // Merge paint/layout (new API) with style (deprecated API)
-    const mergedStyle = mergeStyleProps(
-      paint as Record<string, unknown> | undefined,
-      layout as Record<string, unknown> | undefined,
-      style,
+    console.warn(
+      "[@maplibre/maplibre-react-native] The `style` prop is deprecated. " +
+        "Use `paint` and `layout` props instead. `style` will be removed in v12.",
     );
+  }
 
-    return {
-      ...rest,
-      layerType,
-      sourceLayer,
-      beforeId,
-      afterId,
-      layerIndex,
-      filter: getNativeFilter(filter as FilterSpecification),
-      reactStyle: transformStyle(mergedStyle),
-    };
-  }, [props]);
+  // Style and filter props are commonly written as inline literals, giving
+  // them a fresh identity on every render — so the memos are keyed on the
+  // serialized values instead of references. The inputs are small, making the
+  // keys cheap, while the memoized results keep a stable identity for the
+  // native prop diff.
+  const styleKey = JSON.stringify([paint, layout, style]);
+  const filterKey = JSON.stringify(filter ?? null);
+
+  const nativeFilter = useMemo(
+    () => getNativeFilter(filter as FilterSpecification),
+    [filterKey],
+  );
+
+  const reactStyle = useMemo(
+    () =>
+      // Merge paint/layout (new API) with style (deprecated API)
+      transformStyle(
+        mergeStyleProps(
+          paint as Record<string, unknown> | undefined,
+          layout as Record<string, unknown> | undefined,
+          style,
+        ),
+      ),
+    [styleKey],
+  );
 
   return (
     <LayerNativeComponent
       id={frozenId}
       testID={`mlrn-${props.type}-layer`}
-      {...nativeProps}
+      {...rest}
+      layerType={layerType}
+      sourceLayer={sourceLayer}
+      beforeId={beforeId}
+      afterId={afterId}
+      layerIndex={layerIndex}
+      filter={nativeFilter}
+      reactStyle={reactStyle}
     />
   );
 };

@@ -659,20 +659,29 @@ export const Map = memo(
       };
     }, []);
 
-    const nativeProps = useMemo(() => {
-      const { mapStyle, light, ...otherProps } = props;
+    const { mapStyle, light, ...otherProps } = props;
 
-      return {
-        ...otherProps,
-        ref: nativeRef,
-        style: styles.flex1,
-        mapStyle:
-          typeof mapStyle === "object" ? JSON.stringify(mapStyle) : mapStyle,
-        light: props.light
-          ? transformStyle(convertToInternalStyle(props.light))
-          : undefined,
-      };
-    }, [props]);
+    const mapStyleNative = useMemo(
+      () =>
+        typeof mapStyle === "object" ? JSON.stringify(mapStyle) : mapStyle,
+      [mapStyle],
+    );
+
+    // `light` is commonly an inline literal, so the memo is keyed on the
+    // serialized value instead of the reference.
+    const lightKey = JSON.stringify(light ?? null);
+    const lightNative = useMemo(
+      () => (light ? transformStyle(convertToInternalStyle(light)) : undefined),
+      [lightKey],
+    );
+
+    const nativeProps = {
+      ...otherProps,
+      ref: nativeRef,
+      style: styles.flex1,
+      mapStyle: mapStyleNative,
+      light: lightNative,
+    };
 
     let map: ReactElement | null = null;
     if (isReady) {
