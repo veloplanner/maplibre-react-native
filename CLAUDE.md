@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Fork Workflow
+
+This repository is **VeloPlanner's fork** of `maplibre/maplibre-react-native`. See `FORK.md` for the full branch model, upstream sync, and release process. Hard rules:
+
+- **Never commit to `main`** — it is a pure mirror of `upstream/main`, fast-forward only.
+- Fork-only work (fixes, CI, docs like this file) goes on the `veloplanner` branch.
+- Branches for upstream PRs start from `main`, never from `veloplanner`.
+
 ## Project Overview
 
 MapLibre React Native is a React Native library for creating maps with MapLibre Native for Android & iOS. This project originated as a fork of rnmapbox, separating from Mapbox-specific functionality to focus on MapLibre.
@@ -11,6 +19,7 @@ MapLibre React Native is a React Native library for creating maps with MapLibre 
 ## Development Commands
 
 ### Setup
+
 ```bash
 # Use Node version from .nvmrc
 nvm install
@@ -20,6 +29,7 @@ yarn install
 ```
 
 ### Building & Linting
+
 ```bash
 # Run all linters (TypeScript + ESLint)
 yarn lint
@@ -38,6 +48,7 @@ yarn prepack
 ```
 
 ### Testing
+
 ```bash
 # Run unit tests (Jest + React Native Testing Library)
 yarn test
@@ -50,6 +61,7 @@ maestro test ./examples/react-native-app/e2e
 ```
 
 ### Codegen
+
 ```bash
 # Generate native code and documentation from MapLibre style spec
 yarn codegen
@@ -60,6 +72,7 @@ yarn codegen
 ### Working with Examples
 
 #### React Native App (Old Architecture)
+
 ```bash
 # Run commands with prefix
 yarn examples:react-native <script>
@@ -79,6 +92,7 @@ yarn purge  # Runs purge:js, purge:android, purge:ios
 ```
 
 #### Expo App (New Architecture)
+
 ```bash
 # Run commands with prefix
 yarn examples:expo <script>
@@ -113,17 +127,20 @@ yarn examples:expo purge
 ### Core Components
 
 **Map Components** (in `/src/components`):
+
 - `MapView` - Main map component
 - `Camera` - Camera/viewport control with animation support
 - `UserLocation` - User location tracking and display
 
 **Sources** (data providers for layers):
+
 - `VectorSource` - Vector tile data
 - `ShapeSource` - GeoJSON data with ref for querying features
 - `RasterSource` - Raster tile data
 - `ImageSource` - Single image overlay
 
 **Layers** (visual representation):
+
 - `FillLayer`, `LineLayer`, `CircleLayer`, `SymbolLayer` - Vector layers
 - `FillExtrusionLayer` - 3D extrusion
 - `RasterLayer` - Raster tiles
@@ -131,11 +148,13 @@ yarn examples:expo purge
 - `BackgroundLayer` - Map background
 
 **Annotations**:
+
 - `PointAnnotation` - Custom point markers
 - `MarkerView` - React Native view as marker
 - `Callout` - Info popup for annotations
 
 **Other**:
+
 - `Light` - 3D lighting configuration
 - `Images` - Register images for use in styles
 
@@ -166,18 +185,21 @@ yarn examples:expo purge
 ## Working with Native Code
 
 ### iOS Development
+
 - Open `/examples/react-native-app/ios/MapLibreReactNativeExample.xcworkspace` in Xcode
 - Library code appears under `Pods > Development Pods > maplibre-react-native`
 - Native code prefix: `MLRN` (e.g., `MLRNMapView`, `MLRNCamera`)
 - Format Objective-C: `clang-format -i ios/MLRN/*` (or use Xcode 16+)
 
 ### Android Development
+
 - Open `/examples/react-native-app/android` in Android Studio
 - Library code appears as `mlrn` module
 - Example app appears as `app` module
 - Package: `org.maplibre.reactnative`
 
 ### Upgrading MapLibre Native
+
 1. **Android**: Update `org.maplibre.reactnative.nativeVersion` in `/android/gradle.properties`
 2. **iOS**: Update `$MLRN_NATIVE_VERSION` in `/maplibre-react-native.podspec`
 3. **iOS**: Update Swift package reference in `/examples/react-native-app/ios/MapLibreReactNativeExample.xcodeproj/project.pbxproj`
@@ -187,22 +209,26 @@ yarn examples:expo purge
 ## Best Practices
 
 ### For New Features
+
 - Add example scene in `/examples/shared` to demonstrate functionality
 - Document with TSDoc comments (generates docs via `yarn codegen`)
 - Add unit tests in `/src/__tests__`
 - Use conventional commits for commit messages (semantic-release for changelog)
 
 ### For Native Changes
+
 - TypeScript changes hot-reload in example apps
 - Native Android/iOS changes require rebuilding the native app
 - Can rebuild directly from Android Studio or Xcode when editing native code
 
 ### Testing Unreleased Versions
+
 Use `yarn pack --out %s-%v.tgz` to create a tarball for testing in other projects. Avoid using `link` for development—use the example apps instead for faster iteration.
 
 ## Yarn Workspaces
 
 This monorepo uses Yarn workspaces:
+
 - Root: Library code
 - `docs`: Documentation site
 - `examples/expo-app`: Expo example
@@ -213,6 +239,7 @@ Run `yarn install` from anywhere to install all workspace dependencies.
 ## Package Manager
 
 Uses **Yarn 4.5.3** (via Corepack). Do NOT install via npm.
+
 ```bash
 corepack enable
 corepack prepare yarn@stable --activate
