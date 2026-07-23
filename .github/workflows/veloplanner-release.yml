@@ -1,6 +1,7 @@
-# Fork-only: packs the package and attaches the tarball to a GitHub release
-# whenever a v*-veloplanner.* tag is pushed. The VeloPlanner app consumes the
-# release-asset URL in its package.json.
+# Fork-only: on a v*-veloplanner.* tag push, run the full upstream Review suite
+# (lint TSC/ESLint/Ktlint, tests, library/docs builds, Android + iOS example
+# builds), then pack the package and attach the tarball to a GitHub release.
+# The VeloPlanner app consumes the release-asset URL in its package.json.
 name: veloplanner-release
 
 on:
@@ -8,27 +9,30 @@ on:
     tags:
       - "v*-veloplanner.*"
 
-permissions:
-  contents: write
-
 jobs:
+  review:
+    name: Review
+    uses: ./.github/workflows/review.yml
+
   release:
+    name: Release
+    needs: [review]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
+      - name: Setup
+        uses: ./.github/actions/setup
 
-      - run: corepack enable
-
-      - run: yarn install --immutable
-
-      - run: npm pack
+      - name: Pack
+        run: npm pack
         working-directory: package
 
-      - run: |
+      - name: Create GitHub release
+        run: |
           gh release create "$GITHUB_REF_NAME" package/*.tgz \
             --title "$GITHUB_REF_NAME" \
             --notes "Fork prerelease for VeloPlanner. See branch \`veloplanner\` for the included fixes."
