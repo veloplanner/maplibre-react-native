@@ -316,6 +316,14 @@ ViewState createViewState(NSDictionary *dict) {
     [_view setReactPreferredFramesPerSecond:newViewProps.preferredFramesPerSecond];
   }
 
+  if (oldViewProps.handledMapChangedEvents != newViewProps.handledMapChangedEvents) {
+    NSMutableSet<NSString *> *handledMapChangedEvents = [NSMutableSet new];
+    for (const auto &eventName : newViewProps.handledMapChangedEvents) {
+      [handledMapChangedEvents addObject:RCTNSStringFromString(eventName)];
+    }
+    [_view setReactHandledMapChangedEvents:handledMapChangedEvents];
+  }
+
   if (oldViewProps.dragPan != newViewProps.dragPan) {
     [_view setReactScrollEnabled:newViewProps.dragPan];
   }

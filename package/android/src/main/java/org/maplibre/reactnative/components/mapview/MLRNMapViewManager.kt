@@ -4,6 +4,7 @@ import android.util.Log
 import android.view.View
 import com.facebook.react.bridge.Dynamic
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.UiThreadUtil
 import com.facebook.react.module.annotations.ReactModule
@@ -245,6 +246,14 @@ open class MLRNMapViewManager(
         value: ReadableMap?,
     ) {
         mapView.setReactScaleBarPosition(value)
+    }
+
+    @ReactProp(name = "handledMapChangedEvents")
+    override fun setHandledMapChangedEvents(
+        mapView: MLRNMapView,
+        value: ReadableArray?,
+    ) {
+        mapView.setReactHandledMapChangedEvents(value)
     }
 
     //endregion

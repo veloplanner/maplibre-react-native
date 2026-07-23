@@ -67,6 +67,73 @@ describe("Map", () => {
     });
   });
 
+  describe("handledMapChangedEvents", () => {
+    test("is empty without frame event handlers", () => {
+      const { getByTestId } = renderMap();
+
+      expect(getByTestId(TEST_ID).props.handledMapChangedEvents).toEqual([]);
+    });
+
+    test("lists frame events with handlers", () => {
+      const { getByTestId } = renderMap({
+        onWillStartRenderingFrame: jest.fn(),
+        onDidFinishRenderingFrameFully: jest.fn(),
+      });
+
+      expect(getByTestId(TEST_ID).props.handledMapChangedEvents).toEqual([
+        "onWillStartRenderingFrame",
+        "onDidFinishRenderingFrameFully",
+      ]);
+    });
+
+    test("keeps array identity when handler identities change", () => {
+      const { getByTestId, rerender } = render(
+        <Map
+          mapStyle="https://demotiles.maplibre.org/style.json"
+          testID={TEST_ID}
+          onDidFinishRenderingFrame={jest.fn()}
+        />,
+      );
+      fireEvent(getByTestId(`${TEST_ID}-view`), "layout");
+
+      const first = getByTestId(TEST_ID).props.handledMapChangedEvents;
+
+      rerender(
+        <Map
+          mapStyle="https://demotiles.maplibre.org/style.json"
+          testID={TEST_ID}
+          onDidFinishRenderingFrame={jest.fn()}
+        />,
+      );
+
+      expect(getByTestId(TEST_ID).props.handledMapChangedEvents).toBe(first);
+    });
+
+    test("empties when handlers are removed", () => {
+      const { getByTestId, rerender } = render(
+        <Map
+          mapStyle="https://demotiles.maplibre.org/style.json"
+          testID={TEST_ID}
+          onWillStartRenderingFrame={jest.fn()}
+        />,
+      );
+      fireEvent(getByTestId(`${TEST_ID}-view`), "layout");
+
+      expect(getByTestId(TEST_ID).props.handledMapChangedEvents).toEqual([
+        "onWillStartRenderingFrame",
+      ]);
+
+      rerender(
+        <Map
+          mapStyle="https://demotiles.maplibre.org/style.json"
+          testID={TEST_ID}
+        />,
+      );
+
+      expect(getByTestId(TEST_ID).props.handledMapChangedEvents).toEqual([]);
+    });
+  });
+
   describe("imperative methods", () => {
     test("are exposed", () => {
       const { mapRef } = renderMap();

@@ -675,12 +675,34 @@ export const Map = memo(
       [lightKey],
     );
 
+    // Keyed on handler presence, not identity — the array must keep a stable
+    // identity across re-renders so the prop isn't resent to native, and
+    // native only emits the per-frame render events listed here.
+    const hasOnWillStartRenderingFrame = !!props.onWillStartRenderingFrame;
+    const hasOnDidFinishRenderingFrame = !!props.onDidFinishRenderingFrame;
+    const hasOnDidFinishRenderingFrameFully =
+      !!props.onDidFinishRenderingFrameFully;
+    const handledMapChangedEvents = useMemo(
+      () =>
+        [
+          hasOnWillStartRenderingFrame && "onWillStartRenderingFrame",
+          hasOnDidFinishRenderingFrame && "onDidFinishRenderingFrame",
+          hasOnDidFinishRenderingFrameFully && "onDidFinishRenderingFrameFully",
+        ].filter((event): event is string => typeof event === "string"),
+      [
+        hasOnWillStartRenderingFrame,
+        hasOnDidFinishRenderingFrame,
+        hasOnDidFinishRenderingFrameFully,
+      ],
+    );
+
     const nativeProps = {
       ...otherProps,
       ref: nativeRef,
       style: styles.flex1,
       mapStyle: mapStyleNative,
       light: lightNative,
+      handledMapChangedEvents,
     };
 
     let map: ReactElement | null = null;

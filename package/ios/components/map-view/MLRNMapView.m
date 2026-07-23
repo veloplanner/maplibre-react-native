@@ -788,14 +788,28 @@ static double const M2PI = M_PI * 2;
 }
 
 - (void)mapViewWillStartRenderingFrame:(MLNMapView *)mapView {
-  self.reactOnWillStartRenderingFrame(nil);
+  if (![self.reactHandledMapChangedEvents containsObject:@"onWillStartRenderingFrame"]) {
+    return;
+  }
+  if (self.reactOnWillStartRenderingFrame) {
+    self.reactOnWillStartRenderingFrame(nil);
+  }
 }
 
 - (void)mapViewDidFinishRenderingFrame:(MLNMapView *)mapView fullyRendered:(BOOL)fullyRendered {
+  NSString *eventName =
+      fullyRendered ? @"onDidFinishRenderingFrameFully" : @"onDidFinishRenderingFrame";
+  if (![self.reactHandledMapChangedEvents containsObject:eventName]) {
+    return;
+  }
   if (fullyRendered) {
-    self.reactOnDidFinishRenderingFrameFully(nil);
+    if (self.reactOnDidFinishRenderingFrameFully) {
+      self.reactOnDidFinishRenderingFrameFully(nil);
+    }
   } else {
-    self.reactOnDidFinishRenderingFrame(nil);
+    if (self.reactOnDidFinishRenderingFrame) {
+      self.reactOnDidFinishRenderingFrame(nil);
+    }
   }
 }
 

@@ -81,6 +81,12 @@ export interface NativeProps extends ViewProps {
   scaleBar?: CodegenTypes.WithDefault<boolean, false>;
   scaleBarPosition?: NativeOrnamentViewPosition;
 
+  /**
+   * Names of map-change events JS subscribed to. Native only emits the per-frame
+   * render events when they are listed here.
+   */
+  handledMapChangedEvents?: readonly string[];
+
   onPress?: CodegenTypes.BubblingEventHandler<NativePressEvent>;
   onLongPress?: CodegenTypes.BubblingEventHandler<NativePressEvent>;
 

@@ -41,6 +41,7 @@ typedef void (^StyleLoadedBlock)(MLNStyle *__nonnull style);
 @property (nonatomic, copy, nullable) NSDictionary *reactLight;
 @property (nonatomic, copy, nullable) NSDictionary<NSString *, NSNumber *> *reactContentInset;
 @property (nonatomic, assign) NSInteger reactPreferredFramesPerSecond;
+@property (nonatomic, copy, nullable) NSSet<NSString *> *reactHandledMapChangedEvents;
 
 @property (nonatomic, assign) BOOL reactScrollEnabled;
 @property (nonatomic, assign) BOOL reactTouchZoomEnabled;

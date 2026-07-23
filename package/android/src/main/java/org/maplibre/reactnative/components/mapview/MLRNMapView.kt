@@ -138,6 +138,7 @@ open class MLRNMapView(
     private var mapStyle: String? = null
     private var insets: ReadableArray? = null
     private var preferredFramesPerSecond: Int? = null
+    private var handledMapChangedEvents: Set<String> = emptySet()
 
     private var scrollEnabled: Boolean? = null
     private var touchZoomEnabled: Boolean? = null
@@ -791,7 +792,9 @@ open class MLRNMapView(
 
     override fun onWillStartRenderingFrame() {
         markerViewManager?.updateMarkers()
-        handleMapChangedEvent("onWillStartRenderingFrame")
+        if ("onWillStartRenderingFrame" in handledMapChangedEvents) {
+            handleMapChangedEvent("onWillStartRenderingFrame")
+        }
     }
 
     override fun onDidFinishRenderingFrame(
@@ -799,10 +802,10 @@ open class MLRNMapView(
         frameEncodingTime: Double,
         frameRenderingTime: Double,
     ) {
-        if (fully) {
-            handleMapChangedEvent("onDidFinishRenderingFrameFully")
-        } else {
-            handleMapChangedEvent("onDidFinishRenderingFrame")
+        val eventName =
+            if (fully) "onDidFinishRenderingFrameFully" else "onDidFinishRenderingFrame"
+        if (eventName in handledMapChangedEvents) {
+            handleMapChangedEvent(eventName)
         }
     }
 
@@ -894,6 +897,11 @@ open class MLRNMapView(
             insets = null
         }
         updateInsets()
+    }
+
+    fun setReactHandledMapChangedEvents(value: ReadableArray?) {
+        handledMapChangedEvents =
+            value?.toArrayList()?.filterIsInstance<String>()?.toSet() ?: emptySet()
     }
 
     fun setReactPreferredFramesPerSecond(preferredFramesPerSecond: Int?) {
