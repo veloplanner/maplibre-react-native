@@ -71,3 +71,7 @@ Exist only on `veloplanner`, never in upstream PRs:
 - The upstream `Release` workflow (semantic-release) is disabled in the Actions UI —
   it triggers on pushes to `main`/`beta`/`alpha` with no repository guard, so every
   upstream sync push would fire it.
+
+## PRs to open to the upstream
+
+- https://github.com/veloplanner/maplibre-react-native/commit/a6b65ded21210162d5a824745dab36e7123e28db

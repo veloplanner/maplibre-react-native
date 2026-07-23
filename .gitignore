@@ -94,3 +94,6 @@ package/android/generated
 
 # Maestro
 report.xml
+
+# Claude Code (personal overrides)
+.claude/settings.local.json
