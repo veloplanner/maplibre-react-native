@@ -63,6 +63,8 @@ Exist only on `veloplanner`, never in upstream PRs:
 - `FORK.md`
 - `CLAUDE.md`
 - `AUDIT-2026-07.md`
+- `LOCATION-LIFECYCLE-FIXES.md`
+- `LOCATION-LIFECYCLE-PROPOSAL.md`
 - `.github/workflows/veloplanner-release.yml`
 
 ## GitHub settings (not visible in the repo)
@@ -78,3 +80,9 @@ Exist only on `veloplanner`, never in upstream PRs:
   - https://github.com/veloplanner/maplibre-react-native/commit/a6b65ded21210162d5a824745dab36e7123e28db
 - perf: gate per-frame render events on JS subscription
   - https://github.com/veloplanner/maplibre-react-native/commit/55b71b44e6f3dee2924b40e59f17a941cb46de8e
+- fix(android): stop shared location engine when its last consumer releases it
+  - https://github.com/veloplanner/maplibre-react-native/commit/bb1c9ca1bd87c167fc0334d525c432a5d8de1384
+  - plain-English explanation: [LOCATION-LIFECYCLE-FIXES.md](./LOCATION-LIFECYCLE-FIXES.md)
+- fix(ios): stop unused heading updates and location manager retain cycle
+  - https://github.com/veloplanner/maplibre-react-native/commit/3dce901c5e72baced31262c5df793f972baf0357
+  - plain-English explanation: [LOCATION-LIFECYCLE-FIXES.md](./LOCATION-LIFECYCLE-FIXES.md)
