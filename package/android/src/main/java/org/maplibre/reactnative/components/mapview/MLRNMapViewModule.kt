@@ -184,9 +184,11 @@ class MLRNMapViewModule(
         promise: Promise,
     ) {
         withViewportOnUIThread(reactTag, promise) {
-            it.takeSnap(output == "file") { payload ->
-                promise.resolve(payload)
-            }
+            it.takeSnap(
+                writeToDisk = output == "file",
+                onError = { message -> promise.reject(Throwable(message)) },
+                onSuccess = { payload -> promise.resolve(payload) },
+            )
         }
     }
 

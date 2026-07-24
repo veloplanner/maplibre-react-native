@@ -29,6 +29,12 @@ class MLRNVectorSource(
             return null
         }
 
+        // Blocks the calling thread on a renderer round-trip; a dead render thread
+        // never serves it (permanent hang + wedged mailbox).
+        if (mMapView?.isRendererAvailable() == false) {
+            return GeoJSONUtils.fromFeatureList(emptyList())
+        }
+
         val features =
             source!!.querySourceFeatures(layerIDs.toTypedArray<String>(), filter)
 

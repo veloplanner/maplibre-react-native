@@ -149,9 +149,19 @@ class MLRNGeoJSONSource(
             return options
         }
 
+    // querySourceFeatures and the cluster getters block the calling thread on a
+    // renderer round-trip; a dead render thread never serves them (permanent hang
+    // + wedged mailbox), so bail out with empty results instead.
+
     fun getData(filter: Expression?): WritableMap {
         if (source == null) {
             throw IllegalStateException("Source is not yet loaded")
+        }
+
+        if (mMapView?.isRendererAvailable() == false) {
+            return GeoJSONUtils.fromFeatureCollection(
+                FeatureCollection.fromFeatures(emptyList()),
+            )
         }
 
         val features: List<Feature> = source!!.querySourceFeatures(filter)
@@ -164,6 +174,10 @@ class MLRNGeoJSONSource(
     fun getClusterExpansionZoom(clusterId: Int): Int {
         if (source == null) {
             throw IllegalStateException("Source is not yet loaded")
+        }
+
+        if (mMapView?.isRendererAvailable() == false) {
+            return 0
         }
 
         val zoom = source!!.getClusterExpansionZoom(createClusterFeature(clusterId))
@@ -180,6 +194,10 @@ class MLRNGeoJSONSource(
             throw IllegalStateException("Source is not yet loaded")
         }
 
+        if (mMapView?.isRendererAvailable() == false) {
+            return GeoJSONUtils.fromFeatureList(emptyList())
+        }
+
         val features =
             source!!.getClusterLeaves(
                 createClusterFeature(clusterId),
@@ -193,6 +211,10 @@ class MLRNGeoJSONSource(
     fun getClusterChildren(clusterId: Int): WritableArray {
         if (source == null) {
             throw IllegalStateException("Source is not yet loaded")
+        }
+
+        if (mMapView?.isRendererAvailable() == false) {
+            return GeoJSONUtils.fromFeatureList(emptyList())
         }
 
         val leaves = source!!.getClusterChildren(createClusterFeature(clusterId))
