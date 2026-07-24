@@ -31,6 +31,14 @@ class MLRNCameraManager(
 
     override fun createViewInstance(reactContext: ThemedReactContext): MLRNCamera = MLRNCamera(reactContext)
 
+    // Subtree deletion / stopSurface only guarantees onDropViewInstance, not
+    // removeViewAt -> removeFromMap; the map may already be disposed here, so
+    // only the location hold is released
+    override fun onDropViewInstance(camera: MLRNCamera) {
+        camera.releaseLocation()
+        super.onDropViewInstance(camera)
+    }
+
     @ReactProp(name = "stop")
     override fun setStop(
         camera: MLRNCamera,

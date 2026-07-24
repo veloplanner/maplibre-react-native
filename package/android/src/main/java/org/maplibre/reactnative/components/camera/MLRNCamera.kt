@@ -125,7 +125,20 @@ class MLRNCamera(
         }
     }
 
-    override fun removeFromMap(mapView: MLRNMapView) {}
+    override fun removeFromMap(mapView: MLRNMapView) {
+        // Clear the tracking listener before dropping follow mode, so the
+        // resulting CameraMode.NONE change isn't dispatched to this dying view
+        locationComponentManager?.addOnCameraTrackingChangedListener(null)
+        locationComponentManager?.setFollowUserLocation(false)
+        releaseLocation()
+    }
+
+    // Map-independent so MLRNCameraManager.onDropViewInstance can release on
+    // Fabric teardown paths that never call removeFromMap; idempotent
+    fun releaseLocation() {
+        locationManager.removeLocationListener(locationChangeListener)
+        locationManager.disable(this)
+    }
 
     fun handleImperativeStop(stop: ReadableMap?) {
         val mapView = this.mapView ?: return
@@ -287,9 +300,7 @@ class MLRNCamera(
             return
         }
 
-        if (!locationManager.isActive()) {
-            locationManager.enable()
-        }
+        locationManager.enable(this)
 
         mapView!!.mapLibreMap!!.getStyle { style ->
             enableLocationComponent(

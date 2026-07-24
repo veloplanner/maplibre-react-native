@@ -72,7 +72,7 @@ class MLRNLocationModule(
         this.minDisplacement = minDisplacement.toFloat()
         if (isEnabled) {
             locationManager.setMinDisplacement(this.minDisplacement)
-            locationManager.enable()
+            locationManager.enable(this)
         }
     }
 
@@ -115,7 +115,7 @@ class MLRNLocationModule(
     private fun startLocationManager() {
         locationManager.addLocationListener(onUserLocationChangeCallback)
         locationManager.setMinDisplacement(minDisplacement)
-        locationManager.enable()
+        locationManager.enable(this)
         isPaused = false
     }
 
@@ -124,7 +124,7 @@ class MLRNLocationModule(
             return
         }
 
-        locationManager.disable()
+        locationManager.disable(this)
         isPaused = true
     }
 
@@ -134,7 +134,7 @@ class MLRNLocationModule(
         }
 
         locationManager.removeLocationListener(onUserLocationChangeCallback)
-        locationManager.dispose()
+        locationManager.disable(this)
         isEnabled = false
         isPaused = false
     }

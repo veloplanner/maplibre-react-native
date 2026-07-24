@@ -20,6 +20,7 @@ class LocationManager private constructor(
     var engine: LocationEngine? = null
         private set
     private val listeners: MutableList<OnUserLocationChange> = ArrayList<OnUserLocationChange>()
+    private val owners: MutableSet<Any> = mutableSetOf()
 
     private var mMinDisplacement = 0f
     private var isActive = false
@@ -32,12 +33,13 @@ class LocationManager private constructor(
     }
 
     init {
+        // Created exactly once: LocationComponent captures this engine instance,
+        // so replacing it would leave the component subscribed to a stale engine.
+        this.engine = LocationEngineProvider().getLocationEngine(context)
         this.buildEngineRequest()
     }
 
     private fun buildEngineRequest() {
-        this.engine = LocationEngineProvider().getLocationEngine(context)
-
         locationEngineRequest =
             LocationEngineRequest
                 .Builder(DEFAULT_INTERVAL_MILLIS)
@@ -64,7 +66,11 @@ class LocationManager private constructor(
     }
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
-    fun enable() {
+    @Synchronized
+    fun enable(owner: Any) {
+        // Recorded before the permission gate so a later disable stays symmetric
+        owners.add(owner)
+
         if (!PermissionsManager.areLocationPermissionsGranted(context)) {
             return
         }
@@ -85,18 +91,14 @@ class LocationManager private constructor(
         isActive = true
     }
 
-    fun disable() {
-        engine!!.removeLocationUpdates(this)
-        isActive = false
-    }
+    @Synchronized
+    fun disable(owner: Any) {
+        owners.remove(owner)
 
-    fun dispose() {
-        if (this.engine == null) {
-            return
+        if (owners.isEmpty()) {
+            engine!!.removeLocationUpdates(this)
+            isActive = false
         }
-
-        disable()
-        engine!!.removeLocationUpdates(this)
     }
 
     fun isActive(): Boolean = this.engine != null && this.isActive
