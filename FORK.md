@@ -63,6 +63,7 @@ Exist only on `veloplanner`, never in upstream PRs:
 - `FORK.md`
 - `CLAUDE.md`
 - `AUDIT-2026-07.md`
+- `ANR-RENDER-THREAD-FINDINGS.md`
 - `LOCATION-LIFECYCLE-FIXES.md`
 - `LOCATION-LIFECYCLE-PROPOSAL.md`
 - `.github/workflows/veloplanner-release.yml`
@@ -86,3 +87,14 @@ Exist only on `veloplanner`, never in upstream PRs:
 - fix(ios): stop unused heading updates and location manager retain cycle
   - https://github.com/veloplanner/maplibre-react-native/commit/3dce901c5e72baced31262c5df793f972baf0357
   - plain-English explanation: [LOCATION-LIFECYCLE-FIXES.md](./LOCATION-LIFECYCLE-FIXES.md)
+- fix(android): survive dead render threads and wedged renderer mailboxes (tap ANR)
+  - https://github.com/veloplanner/maplibre-react-native/commit/fe16b77ab7fb16d892242394ee675355f4f093e5
+  - note for the PR: `SurfaceViewRenderThreadGuard` is a reflection-based workaround; upstream
+    likely wants the real fix in MapLibre Native instead (park queued events on the view, not
+    the render thread) — worth an issue on maplibre-native either way
+- fix(android): render-thread ANR prevention (three commits; revisit the PointAnnotation
+  resolver gap before upstreaming — see the doc below)
+  - https://github.com/veloplanner/maplibre-react-native/commit/3cbec712e8fdef53d29ba7ad89ade4c180589411
+  - https://github.com/veloplanner/maplibre-react-native/commit/9d0eb7cbe096aed6dd269cfdece205b91d35862d
+  - https://github.com/veloplanner/maplibre-react-native/commit/1003899aa68c17e4778e939562d211b8b46daec7
+  - plain-English explanation: [ANR-RENDER-THREAD-FINDINGS.md](./ANR-RENDER-THREAD-FINDINGS.md)
