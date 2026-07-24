@@ -71,6 +71,21 @@ const Examples = new ExampleGroup(
   [
     new ExampleItem("Bug Report", MapLibreExamples.BugReport),
 
+    new ExampleGroup("ANR Repro", [
+      new ExampleItem(
+        "Query ANR — Pressable Source",
+        MapLibreExamples.QueryAnrPressableSource,
+      ),
+      new ExampleItem(
+        "Query ANR — Annotation Resolver",
+        MapLibreExamples.QueryAnrAnnotationResolver,
+      ),
+      new ExampleItem(
+        "Track User Location NPE",
+        MapLibreExamples.TrackUserLocationStyleReloadNpe,
+      ),
+    ]),
+
     new ExampleGroup("E2E Tests", [
       new ExampleGroup("Map", [
         new ExampleItem(
@@ -401,7 +416,14 @@ export function Home() {
         },
       }}
     >
-      <Stack.Navigator initialRouteName={Examples.id}>
+      {/* No transition animations: the ANR repro examples push a route to
+          detach the covered screen, and the detach must happen inside the
+          ~300 ms onSingleTapConfirmed window — an animated push detaches
+          only after the transition ends, missing it. */}
+      <Stack.Navigator
+        initialRouteName={Examples.id}
+        screenOptions={{ animation: "none" }}
+      >
         {FlatExamples.map((example) => buildNavigationScreens(example, Stack))}
       </Stack.Navigator>
     </NavigationContainer>
