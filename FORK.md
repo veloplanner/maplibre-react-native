@@ -74,4 +74,7 @@ Exist only on `veloplanner`, never in upstream PRs:
 
 ## PRs to open to the upstream
 
-- https://github.com/veloplanner/maplibre-react-native/commit/a6b65ded21210162d5a824745dab36e7123e28db
+- perf: memoize style and data serialization in Layer, Map, and GeoJSONSource
+  - https://github.com/veloplanner/maplibre-react-native/commit/a6b65ded21210162d5a824745dab36e7123e28db
+- perf: gate per-frame render events on JS subscription
+  - https://github.com/veloplanner/maplibre-react-native/commit/55b71b44e6f3dee2924b40e59f17a941cb46de8e
