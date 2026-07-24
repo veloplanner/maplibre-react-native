@@ -7,7 +7,6 @@
 @implementation MLRNLocationManager {
   CLLocationManager *locationManager;
   CLLocation *lastKnownLocation;
-  CLHeading *lastKnownHeading;
   CLLocationDistance displacement;
   BOOL isListening;
   MLRNPermissionsBlock permissionsCompletionBlock;
@@ -31,8 +30,13 @@
 }
 
 - (void)dealloc {
-  locationManager.delegate = nil;
-  [self stop];
+  // Reachable now that the delegate no longer retains us; must not capture
+  // self in a dispatched block mid-dealloc, so keep only the CLLocationManager
+  CLLocationManager *manager = locationManager;
+  manager.delegate = nil;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [manager stopUpdatingLocation];
+  });
 }
 
 - (void)start {
@@ -43,7 +47,6 @@
   dispatch_async(dispatch_get_main_queue(), ^{
     [self->locationManager requestWhenInUseAuthorization];
     [self->locationManager startUpdatingLocation];
-    [self->locationManager startUpdatingHeading];
     self->isListening = YES;
   });
 }
@@ -89,7 +92,6 @@
 
   dispatch_async(dispatch_get_main_queue(), ^{
     [self->locationManager stopUpdatingLocation];
-    [self->locationManager stopUpdatingHeading];
     self->isListening = NO;
   });
 }
@@ -105,16 +107,6 @@
   }
   MLRNLocation *location = [self _convertToMLRNLocation:lastKnownLocation];
   return location;
-}
-
-- (void)locationManager:(CLLocationManager *)manager didUpdateHeading:(CLHeading *)heading {
-  lastKnownHeading = heading;
-
-  if (displacement > 0) {
-    return;
-  }
-
-  [self _updateDelegate];
 }
 
 - (void)locationManager:(CLLocationManager *)manager
@@ -160,7 +152,6 @@
 
   MLRNLocation *userLocation = [[MLRNLocation alloc] init];
   userLocation.location = location;
-  userLocation.heading = lastKnownHeading;
   return userLocation;
 }
 

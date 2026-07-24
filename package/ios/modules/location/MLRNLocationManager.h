@@ -6,7 +6,7 @@ typedef void (^MLRNPermissionsBlock)(BOOL granted);
 
 @interface MLRNLocationManager : NSObject
 
-@property (nonatomic, strong) id<MLRNLocationManagerDelegate> delegate;
+@property (nonatomic, weak) id<MLRNLocationManagerDelegate> delegate;
 
 + (id)sharedInstance;
 
