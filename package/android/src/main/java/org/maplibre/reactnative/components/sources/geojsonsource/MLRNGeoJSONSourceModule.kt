@@ -46,7 +46,15 @@ class MLRNGeoJSONSourceModule(
         promise: Promise,
     ) {
         withViewportOnUIThread(reactTag, promise) {
-            promise.resolve(it.getClusterExpansionZoom(clusterId.toInt()))
+            val zoom = it.getClusterExpansionZoom(clusterId.toInt())
+            if (zoom != null) {
+                promise.resolve(zoom)
+            } else {
+                promise.reject(
+                    "getClusterExpansionZoom",
+                    "Cluster expansion zoom unavailable: the map view is detached, paused, or its render thread has exited",
+                )
+            }
         }
     }
 

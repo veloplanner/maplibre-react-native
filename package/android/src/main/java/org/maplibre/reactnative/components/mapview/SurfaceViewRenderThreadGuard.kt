@@ -23,7 +23,7 @@ import java.lang.reflect.Field
 // 2. Wedged renderer mailbox: the renderer actor's Mailbox schedules its
 //    receive runnable only on the empty -> non-empty transition (mbgl
 //    Mailbox::push), and MapLibreSurfaceView.queueEvent posts into the current
-//    renderThread's private ArrayList. A receive runnable stranded on an
+//    renderThread's eventQueue ArrayList. A receive runnable stranded on an
 //    exited thread — left undrained at thread exit, or posted during the
 //    detached window while the renderThread field still referenced the dead
 //    thread — wedges the mailbox permanently: its queue stays non-empty, no
@@ -45,8 +45,8 @@ internal class SurfaceViewRenderThreadGuard private constructor(
     private val surfaceView: MapLibreSurfaceView,
     private val renderThreadField: Field,
 ) {
-    // The render thread that exited on the last detach; its private eventQueue
-    // may still hold scheduled mailbox receives.
+    // The render thread that exited on the last detach; its eventQueue may
+    // still hold scheduled mailbox receives.
     private var staleRenderThread: Thread? = null
 
     fun isRenderThreadAlive(): Boolean =
@@ -73,9 +73,18 @@ internal class SurfaceViewRenderThreadGuard private constructor(
         // MapLibreSurfaceView.onAttachedToWindow has already started the
         // replacement render thread (attach listeners run after it), so
         // stranded events can be moved onto the live thread now. Sweep once
-        // more a frame later for a push that raced the thread swap.
+        // more a frame later for a push that raced the thread swap, then drop
+        // the dead thread so it (and its eglHelper) can be collected. Only the
+        // deferred sweep releases: if the view detached again before it ran,
+        // staleRenderThread points at the newly exited thread and must survive
+        // for the next re-attach's migration.
         migrateStaleRenderThreadEvents()
-        surfaceView.post { migrateStaleRenderThreadEvents() }
+        surfaceView.post {
+            migrateStaleRenderThreadEvents()
+            if (surfaceView.isAttachedToWindow) {
+                staleRenderThread = null
+            }
+        }
     }
 
     private fun migrateStaleRenderThreadEvents() {

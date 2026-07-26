@@ -151,7 +151,9 @@ class MLRNGeoJSONSource(
 
     // querySourceFeatures and the cluster getters block the calling thread on a
     // renderer round-trip; a dead render thread never serves them (permanent hang
-    // + wedged mailbox), so bail out with empty results instead.
+    // + wedged mailbox), so bail out with empty results — except expansion zoom,
+    // which returns null (the module rejects): a fake 0 would be fed straight
+    // into a camera zoom by typical JS callers.
 
     fun getData(filter: Expression?): WritableMap {
         if (source == null) {
@@ -171,18 +173,16 @@ class MLRNGeoJSONSource(
         )
     }
 
-    fun getClusterExpansionZoom(clusterId: Int): Int {
+    fun getClusterExpansionZoom(clusterId: Int): Int? {
         if (source == null) {
             throw IllegalStateException("Source is not yet loaded")
         }
 
         if (mMapView?.isRendererAvailable() == false) {
-            return 0
+            return null
         }
 
-        val zoom = source!!.getClusterExpansionZoom(createClusterFeature(clusterId))
-
-        return zoom
+        return source!!.getClusterExpansionZoom(createClusterFeature(clusterId))
     }
 
     fun getClusterLeaves(
