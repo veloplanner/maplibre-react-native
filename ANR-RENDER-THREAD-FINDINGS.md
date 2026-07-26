@@ -123,6 +123,10 @@ rule from `package/android`:
 -keepclassmembers class org.maplibre.android.maps.renderer.surfaceview.** { <fields>; }
 ```
 
+**Fixed (2026-07-25):** `package/android/consumer-rules.pro` ships exactly this rule, wired via
+`consumerProguardFiles` — AGP merges consumer rules into the app's R8 configuration, so minified
+app builds keep the four field names. Classes and methods stay optimizable.
+
 ### PointAnnotation apps bypass the guards
 
 Once `createSymbolManager` runs, its `MapClickResolver` is deliberately re-prioritized ahead
@@ -138,18 +142,33 @@ must be revisited before upstreaming or if annotations are ever adopted.
 thread with a stranded event, and `isRendererAvailable()` doesn't cover its callers. Not seen
 in Sentry yet; check who calls it (likely the destroy path) before deciding whether to guard.
 
+**Resolved — unreachable in 13.2.0 (2026-07-25), no guard needed.** Verified in the shipped
+bytecode (javap over every class in the AAR) and the `android-v13.2.0` source tag: the only
+Java references are the delegation chain itself (`MapRendererScheduler` → renderers → render
+threads), and the JNI bridge `mbgl::android::MapRenderer::waitForEmpty` — compiled in as a
+mandatory `Scheduler` override — has zero callers. Core's two `waitForEmpty` call sites go
+elsewhere: `render_orchestrator.cpp` waits on the worker `ThreadedScheduler` pool, and
+`ActionJournal::flush` on its own `Scheduler::GetSequenced()`. Dead code today; re-check on
+every MapLibre upgrade alongside the reflection guard.
+
 ### Minor
 
 - `getClusterExpansionZoom` returns `0` when the renderer is unavailable; JS often feeds that
   straight into a camera zoom. Rejecting (as `takeSnap` now does) would be less surprising
   than fake data. Empty query results are the established convention from 3cbec712, so this
-  is a consistency tradeoff, not a bug.
+  is a consistency tradeoff, not a bug. **Fixed (2026-07-25):** now rejects with the
+  `takeSnap`-style message; the source method returns `null` and the module rejects.
 - `staleRenderThread` is never cleared after a successful migration — keeps a dead `Thread`
   (and its `eglHelper`) referenced until the next detach. Idempotent and bounded; cosmetic.
+  **Fixed (2026-07-25):** released after the deferred second sweep, only if the view is still
+  attached — a detach racing the posted runnable must keep the reference for the next
+  re-attach's migration.
 - Migration doesn't preserve ordering relative to events queued on the new thread before
   re-attach. Safe for mailbox receives (order-independent), but it is an unstated assumption.
 - Comment nits in `MLRNMapView.kt`: the reflected fields are `protected`, not "private";
   `queueEvent` is declared on `MapLibreSurfaceView`, not `MapLibreGLSurfaceView`.
+  **Fixed (2026-07-25)** — the stale "private" wording was in `SurfaceViewRenderThreadGuard.kt`;
+  the `queueEvent` attribution was already correct.
 
 ## Why rnmapbox has none of this
 
