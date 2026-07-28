@@ -77,6 +77,9 @@ Exist only on `veloplanner`, never in upstream PRs:
 
 ## PRs to open to the upstream
 
+- fix(android): guard waitForLayer against null style during style switch
+  - updating `afterId`/`beforeId` on a mounted layer while `setStyle()` is still loading
+    hits `mapLibreMap!!.style!!` and crashes (fatal NPE)
 - perf: memoize style and data serialization in Layer, Map, and GeoJSONSource
   - https://github.com/veloplanner/maplibre-react-native/commit/a6b65ded21210162d5a824745dab36e7123e28db
 - perf: gate per-frame render events on JS subscription

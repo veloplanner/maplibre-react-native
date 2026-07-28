@@ -420,7 +420,11 @@ open class MLRNMapView(
         layerID: String,
         callback: FoundLayerCallback,
     ) {
-        val layer = mapLibreMap!!.style!!.getLayer(layerID)
+        // A null style means a style switch is in progress or the map is being torn
+        // down; sources re-add their layers (with current ordering props) once the
+        // new style loads, so there is nothing to wait for here.
+        val style = mapLibreMap?.style ?: return
+        val layer = style.getLayer(layerID)
         if (layer != null) {
             callback.found(layer)
         } else {
