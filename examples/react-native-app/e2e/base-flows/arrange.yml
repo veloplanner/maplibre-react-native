@@ -2,12 +2,20 @@ appId: org.maplibre.reactnative.example
 ---
 - launchApp
 
+# The first cold starts after install are slow on CI simulators; without this
+# they eat into the tap/find timeouts below and flake the first flows.
+- extendedWaitUntil:
+    visible: "E2E Tests, ›"
+    timeout: 60000
+
 - tapOn: "E2E Tests, ›"
+- waitForAnimationToEnd
 
 - scrollUntilVisible:
     element:
       text: "${TEST_GROUP}, ›"
 - tapOn: "${TEST_GROUP}, ›"
+- waitForAnimationToEnd
 
 - scrollUntilVisible:
     element:
