@@ -33,6 +33,19 @@ import java.lang.reflect.Field
 //    mailbox). Moving the stranded runnables onto the live thread lets the
 //    mailbox drain and heal.
 //
+//    Replay caveat: a replayed receive executes whatever message was pushed,
+//    against the Renderer captured at push time — and MapRenderer's
+//    onSurfaceCreated destroys and recreates the Renderer on the SAME
+//    never-closed mailbox on every re-attach. Replay is therefore only safe
+//    because no renderer-targeting sync ask can be stranded-and-replayed:
+//    MLRN's own queries are gated by isRendererAvailable(), un-timeout'd asks
+//    block their caller until the app dies before any re-attach, and the one
+//    timeout-bearing family — the SDK's per-tap annotation hit tests, which
+//    outlived their 200 ms timeout and caused a use-after-free SIGSEGV
+//    (VELOPLANNER_MOBILE-GW) — is gated at source by
+//    MLRNAnnotationHitTestGuard. Async producers target the long-lived
+//    MapRenderer, not the Renderer.
+//
 // The guard also exposes render-thread liveness (isRenderThreadAlive) so
 // callers can refuse synchronous renderer round-trips that would park on a
 // dead thread's queue — the thread can die with the view still attached and

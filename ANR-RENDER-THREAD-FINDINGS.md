@@ -1,7 +1,8 @@
 # Android render-thread ANRs: fixes and findings
 
-Companion to the three Android ANR commits on `veloplanner` (Sentry issue
-VELOPLANNER_MOBILE-FY, dist 140). Covers what each fix does (in the order they were written),
+Companion to the four Android render-thread stability commits on `veloplanner` (Sentry
+issues VELOPLANNER_MOBILE-FY, dist 140, and VELOPLANNER_MOBILE-GW, 2.6.1+141). Covers what
+each fix does (in the order they were written),
 the code review of the last one — verified against the shipped
 `org.maplibre.gl:android-sdk-opengl:13.2.0` bytecode — open risks, how rnmapbox avoids this
 entire bug class, and the sync→async options going forward.
@@ -41,7 +42,7 @@ Delivery of those messages is fragile in three independent ways:
 This surface came from Mapbox GL Native v9 (~2016). Mapbox replaced it with callback-based
 APIs in the v10 rewrite (2021), after the MapLibre fork point.
 
-## The three fixes, in order
+## The four fixes, in order
 
 ### 1. Guard queries + lazy SymbolManager —
 [3cbec712](https://github.com/veloplanner/maplibre-react-native/commit/3cbec712e8fdef53d29ba7ad89ade4c180589411) (2026-07-20)
@@ -75,6 +76,32 @@ Fix: `isRendererAvailable()` adds a render-thread liveness check to all query gu
 re-attach so the mailbox drains and heals; `takeSnap` now rejects its promise;
 `querySourceFeatures` and the GeoJSON cluster getters return empty results.
 
+### 4. Annotation hit-test gate — (2026-07-28)
+
+The mailbox heal (fix 3) turned one residual failure into a SIGSEGV (Sentry
+VELOPLANNER_MOBILE-GW, first seen on 2.6.1+141 / `-veloplanner.2`): `AnnotationManager.onTap`
+runs two synchronous renderer asks on every tap (`queryPointAnnotations` +
+`queryShapeAnnotations`) *before* the `OnMapClickListener` chain, so no MLRN-side guard can
+reach them — and uniquely among sync asks they carry a 200 ms timeout
+(`NativeMapView.annotationRequestTimeout`), so on timeout the caller survives while the ask
+message stays queued in the mailbox. A tap landing after detach (the 300 ms
+`onSingleTapConfirmed` window) strands the message on the dead thread; re-attach recreates
+the Renderer on the *same never-closed mailbox* (`MapRenderer.onSurfaceCreated` — upstream
+bug: `rendererRef` is never invalidated and the mailbox never closed); the heal then replays
+the stranded receive, dispatching the ask into the freed Renderer →
+`RenderOrchestrator::queryShapeAnnotations` reads `*layerImpls` from recycled heap →
+`vector::begin` segfault.
+
+Fix: `MLRNAnnotationHitTestGuard` (Java shim in `org.maplibre.android.maps` — the touched
+types are package-private — reflection-based, fail-open) swaps `AnnotationManager`'s
+`markers`/`shapeAnnotations` containers for wrappers that short-circuit `obtainAllIn` to an
+empty list when no annotations exist (always true under MLRN, which never uses the legacy
+annotation API — taps stop doing renderer round-trips entirely) or when
+`isRendererAvailable()` is false. Emptiness is checked first: it also closes the
+unsynchronized `rendererRef` window during Renderer recreation that no liveness check can
+see. This restores fix 3's replay-safety invariant: no renderer-targeting sync ask can be
+stranded-and-replayed.
+
 ## Review of 1003899a (2026-07-24)
 
 All load-bearing assumptions were verified against the shipped 13.2.0 artifact (via `javap`
@@ -102,10 +129,11 @@ checkout). The commit is correct:
 
 ## Open risks and gaps
 
-### R8/minification silently disables all three fixes (highest)
+### R8/minification silently disables all four fixes (highest)
 
-All three fixes reflect on SDK fields **by string name** (`"renderThread"`,
-`"detachedListener"`, `"eventQueue"`, `"renderThreadManager"`). R8 renames fields based on
+All four fixes reflect on SDK fields **by string name** (`"renderThread"`,
+`"detachedListener"`, `"eventQueue"`, `"renderThreadManager"`, and — fix 4 —
+`"annotationManager"`, `"annotationsArray"`, `"markers"`, `"shapeAnnotations"`). R8 renames fields based on
 static analysis of compiled references; a string passed to `getDeclaredField` is invisible to
 it. In a minified app build the lookup throws `NoSuchFieldException`, the deliberate
 `catch` falls back to stock SDK behavior, and every ANR fix becomes a no-op — no crash, no
@@ -125,7 +153,8 @@ rule from `package/android`:
 
 **Fixed (2026-07-25):** `package/android/consumer-rules.pro` ships exactly this rule, wired via
 `consumerProguardFiles` — AGP merges consumer rules into the app's R8 configuration, so minified
-app builds keep the four field names. Classes and methods stay optimizable.
+app builds keep the four field names. Classes and methods stay optimizable. (2026-07-28: fix 4's
+`MapLibreMap`/`AnnotationManager` field names added to the same file.)
 
 ### PointAnnotation apps bypass the guards
 
@@ -165,6 +194,11 @@ every MapLibre upgrade alongside the reflection guard.
   re-attach's migration.
 - Migration doesn't preserve ordering relative to events queued on the new thread before
   re-attach. Safe for mailbox receives (order-independent), but it is an unstated assumption.
+  A second unstated assumption was *not* safe: a replayed receive dispatches its message into
+  the Renderer captured at push time, and re-attach recreates the Renderer on the same
+  never-closed mailbox — the annotation hit-test asks (the only sync asks with a timeout, so
+  their caller survives the strand) replayed as a use-after-free. **Closed (2026-07-28)** by
+  fix 4 (VELOPLANNER_MOBILE-GW).
 - Comment nits in `MLRNMapView.kt`: the reflected fields are `protected`, not "private";
   `queueEvent` is declared on `MapLibreSurfaceView`, not `MapLibreGLSurfaceView`.
   **Fixed (2026-07-25)** — the stale "private" wording was in `SurfaceViewRenderThreadGuard.kt`;

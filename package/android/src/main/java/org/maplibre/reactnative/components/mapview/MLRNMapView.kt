@@ -31,6 +31,7 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.gestures.MoveGestureDetector
 import org.maplibre.android.log.Logger
 import org.maplibre.android.maps.AttributionDialogManager
+import org.maplibre.android.maps.MLRNAnnotationHitTestGuard
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapLibreMapOptions
 import org.maplibre.android.maps.MapView
@@ -435,6 +436,11 @@ open class MLRNMapView(
 
     override fun onMapReady(mapLibreMap: MapLibreMap) {
         this.mapLibreMap = mapLibreMap
+
+        // Gate the SDK's per-tap annotation hit-test renderer queries, which run
+        // before any OnMapClickListener and so can't be guarded at our own call
+        // sites — see MLRNAnnotationHitTestGuard.
+        MLRNAnnotationHitTestGuard.install(mapLibreMap) { isRendererAvailable() }
 
         val uiSettings = mapLibreMap.uiSettings
         if (attributionGravity == null) attributionGravity = Gravity.END or Gravity.BOTTOM
