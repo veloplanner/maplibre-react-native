@@ -101,3 +101,12 @@ Exist only on `veloplanner`, never in upstream PRs:
   - https://github.com/veloplanner/maplibre-react-native/commit/9d0eb7cbe096aed6dd269cfdece205b91d35862d
   - https://github.com/veloplanner/maplibre-react-native/commit/1003899aa68c17e4778e939562d211b8b46daec7
   - plain-English explanation: [ANR-RENDER-THREAD-FINDINGS.md](./ANR-RENDER-THREAD-FINDINGS.md)
+- fix(android): skip annotation hit-test renderer queries when empty or renderer unavailable
+  - https://github.com/veloplanner/maplibre-react-native/commit/929fb4c7b5f5bc055f97aeff24d0f6a6a45277f6
+  - note for the PR: `MLRNAnnotationHitTestGuard` is a reflection-based workaround like
+    `SurfaceViewRenderThreadGuard`; the root cause is in MapLibre Native —
+    `MapRenderer.onSurfaceCreated` recreates the Renderer on a never-closed mailbox and never
+    invalidates `rendererRef`, so a stranded ask replays into the freed Renderer (SIGSEGV) —
+    worth an issue on maplibre-native either way
+  - plain-English explanation: [ANR-RENDER-THREAD-FINDINGS.md](./ANR-RENDER-THREAD-FINDINGS.md)
+    (fix 4)

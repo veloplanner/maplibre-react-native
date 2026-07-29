@@ -1,7 +1,7 @@
 # Android render-thread ANRs: fixes and findings
 
 Companion to the four Android render-thread stability commits on `veloplanner` (Sentry
-issues VELOPLANNER_MOBILE-FY, dist 140, and VELOPLANNER_MOBILE-GW, 2.6.1+141). Covers what
+issues VELOPLANNER_MOBILE-FY, dist 140, and VELOPLANNER_MOBILE-GW/-GX, 2.6.1+141). Covers what
 each fix does (in the order they were written),
 the code review of the last one — verified against the shipped
 `org.maplibre.gl:android-sdk-opengl:13.2.0` bytecode — open risks, how rnmapbox avoids this
@@ -79,7 +79,9 @@ re-attach so the mailbox drains and heals; `takeSnap` now rejects its promise;
 ### 4. Annotation hit-test gate — (2026-07-28)
 
 The mailbox heal (fix 3) turned one residual failure into a SIGSEGV (Sentry
-VELOPLANNER_MOBILE-GW, first seen on 2.6.1+141 / `-veloplanner.2`): `AnnotationManager.onTap`
+VELOPLANNER_MOBILE-GW; sibling VELOPLANNER_MOBILE-GX is the same replay crashing in the
+`queryPointAnnotations`/`markers` ask instead — both first seen on 2.6.1+141 /
+`-veloplanner.2`, both covered by this guard): `AnnotationManager.onTap`
 runs two synchronous renderer asks on every tap (`queryPointAnnotations` +
 `queryShapeAnnotations`) *before* the `OnMapClickListener` chain, so no MLRN-side guard can
 reach them — and uniquely among sync asks they carry a 200 ms timeout
@@ -198,7 +200,7 @@ every MapLibre upgrade alongside the reflection guard.
   the Renderer captured at push time, and re-attach recreates the Renderer on the same
   never-closed mailbox — the annotation hit-test asks (the only sync asks with a timeout, so
   their caller survives the strand) replayed as a use-after-free. **Closed (2026-07-28)** by
-  fix 4 (VELOPLANNER_MOBILE-GW).
+  fix 4 (VELOPLANNER_MOBILE-GW/-GX).
 - Comment nits in `MLRNMapView.kt`: the reflected fields are `protected`, not "private";
   `queueEvent` is declared on `MapLibreSurfaceView`, not `MapLibreGLSurfaceView`.
   **Fixed (2026-07-25)** — the stale "private" wording was in `SurfaceViewRenderThreadGuard.kt`;
