@@ -39,28 +39,38 @@ git cherry-pick <sha>   # if the fix already exists on veloplanner
 Fork-only files (see below) must never appear in these branches — branching from `main`
 guarantees that. Once upstream merges, the change returns via the sync flow.
 
+The worklist is the `Upstream:` line on every entry in
+[FORK_CHANGELOG.md](./FORK_CHANGELOG.md) — update it when a PR opens and again when it
+merges, and drop the entry once the next sync brings the change back.
+
 ## Releasing
 
 Releases are prereleases of the upstream version currently on `veloplanner`,
 e.g. `11.3.6-veloplanner.1`.
 
-1. On `veloplanner`, bump `version` in `package/package.json` to `X.Y.Z-veloplanner.N`
+1. Add a `## vX.Y.Z-veloplanner.N` section to [FORK_CHANGELOG.md](./FORK_CHANGELOG.md)
+   describing what the release carries. The heading must be the tag verbatim — the release
+   workflow extracts that section as the GitHub release notes and fails the run if it's
+   missing.
+2. On `veloplanner`, bump `version` in `package/package.json` to `X.Y.Z-veloplanner.N`
    and commit (`chore: version X.Y.Z-veloplanner.N`).
-2. Tag and push:
+3. Tag and push:
    ```bash
    git tag vX.Y.Z-veloplanner.N
    git push origin veloplanner vX.Y.Z-veloplanner.N
    ```
-3. `.github/workflows/veloplanner-release.yml` runs the upstream Review suite
+4. `.github/workflows/veloplanner-release.yml` checks the tag against
+   `package/package.json` and `FORK_CHANGELOG.md`, runs the upstream Review suite
    (lint, tests, library/docs builds, Android + iOS example builds), packs the
    package, and attaches the tarball to a GitHub release.
-4. The VeloPlanner app consumes the release-asset URL in its `package.json`.
+5. The VeloPlanner app consumes the release-asset URL in its `package.json`.
 
 ## Fork-only files
 
 Exist only on `veloplanner`, never in upstream PRs:
 
 - `FORK.md`
+- `FORK_CHANGELOG.md`
 - `CLAUDE.md`
 - `AUDIT-2026-07.md`
 - `ANR-RENDER-THREAD-FINDINGS.md`
@@ -74,39 +84,3 @@ Exist only on `veloplanner`, never in upstream PRs:
 - The upstream `Release` workflow (semantic-release) is disabled in the Actions UI —
   it triggers on pushes to `main`/`beta`/`alpha` with no repository guard, so every
   upstream sync push would fire it.
-
-## PRs to open to the upstream
-
-- fix(android): guard waitForLayer against null style during style switch
-  - updating `afterId`/`beforeId` on a mounted layer while `setStyle()` is still loading
-    hits `mapLibreMap!!.style!!` and crashes (fatal NPE)
-- perf: memoize style and data serialization in Layer, Map, and GeoJSONSource
-  - https://github.com/veloplanner/maplibre-react-native/commit/a6b65ded21210162d5a824745dab36e7123e28db
-- perf: gate per-frame render events on JS subscription
-  - https://github.com/veloplanner/maplibre-react-native/commit/55b71b44e6f3dee2924b40e59f17a941cb46de8e
-- fix(android): stop shared location engine when its last consumer releases it
-  - https://github.com/veloplanner/maplibre-react-native/commit/bb1c9ca1bd87c167fc0334d525c432a5d8de1384
-  - plain-English explanation: [LOCATION-LIFECYCLE-FIXES.md](./LOCATION-LIFECYCLE-FIXES.md)
-- fix(ios): stop unused heading updates and location manager retain cycle
-  - https://github.com/veloplanner/maplibre-react-native/commit/3dce901c5e72baced31262c5df793f972baf0357
-  - plain-English explanation: [LOCATION-LIFECYCLE-FIXES.md](./LOCATION-LIFECYCLE-FIXES.md)
-- fix(android): survive dead render threads and wedged renderer mailboxes (tap ANR)
-  - https://github.com/veloplanner/maplibre-react-native/commit/fe16b77ab7fb16d892242394ee675355f4f093e5
-  - note for the PR: `SurfaceViewRenderThreadGuard` is a reflection-based workaround; upstream
-    likely wants the real fix in MapLibre Native instead (park queued events on the view, not
-    the render thread) — worth an issue on maplibre-native either way
-- fix(android): render-thread ANR prevention (three commits; revisit the PointAnnotation
-  resolver gap before upstreaming — see the doc below)
-  - https://github.com/veloplanner/maplibre-react-native/commit/3cbec712e8fdef53d29ba7ad89ade4c180589411
-  - https://github.com/veloplanner/maplibre-react-native/commit/9d0eb7cbe096aed6dd269cfdece205b91d35862d
-  - https://github.com/veloplanner/maplibre-react-native/commit/1003899aa68c17e4778e939562d211b8b46daec7
-  - plain-English explanation: [ANR-RENDER-THREAD-FINDINGS.md](./ANR-RENDER-THREAD-FINDINGS.md)
-- fix(android): skip annotation hit-test renderer queries when empty or renderer unavailable
-  - https://github.com/veloplanner/maplibre-react-native/commit/929fb4c7b5f5bc055f97aeff24d0f6a6a45277f6
-  - note for the PR: `MLRNAnnotationHitTestGuard` is a reflection-based workaround like
-    `SurfaceViewRenderThreadGuard`; the root cause is in MapLibre Native —
-    `MapRenderer.onSurfaceCreated` recreates the Renderer on a never-closed mailbox and never
-    invalidates `rendererRef`, so a stranded ask replays into the freed Renderer (SIGSEGV) —
-    worth an issue on maplibre-native either way
-  - plain-English explanation: [ANR-RENDER-THREAD-FINDINGS.md](./ANR-RENDER-THREAD-FINDINGS.md)
-    (fix 4)
