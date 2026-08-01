@@ -1,6 +1,7 @@
-# Fork-only: on a v*-veloplanner.* tag push, run the full upstream Review suite
-# (lint TSC/ESLint/Ktlint, tests, library/docs builds, Android + iOS example
-# builds), then pack the package and attach the tarball to a GitHub release.
+# Fork-only: on a v*-veloplanner.* tag push, check the tag against the package
+# version and FORK_CHANGELOG.md, run the full upstream Review suite (lint
+# TSC/ESLint/Ktlint, tests, library/docs builds, Android + iOS example builds),
+# then pack the package and attach the tarball to a GitHub release.
 # The VeloPlanner app consumes the release-asset URL in its package.json.
 name: veloplanner-release
 
@@ -10,13 +11,40 @@ on:
       - "v*-veloplanner.*"
 
 jobs:
+  # Runs before Review so a bad tag fails in seconds instead of after the
+  # Android + iOS example builds.
+  verify:
+    name: Verify release metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check package version and changelog match the tag
+        run: |
+          expected="${GITHUB_REF_NAME#v}"
+          actual="$(node -p "require('./package/package.json').version")"
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::tag $GITHUB_REF_NAME expects package version $expected, found $actual"
+            exit 1
+          fi
+          awk -v tag="## $GITHUB_REF_NAME" \
+            '$0 == tag { found = 1; next } found && /^## / { exit } found { print }' \
+            FORK_CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::FORK_CHANGELOG.md has no '## $GITHUB_REF_NAME' section"
+            exit 1
+          fi
+          cat notes.md
+
   review:
     name: Review
+    needs: [verify]
     uses: ./.github/workflows/review.yml
 
   release:
     name: Release
-    needs: [review]
+    needs: [verify, review]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -31,10 +59,18 @@ jobs:
         run: npm pack
         working-directory: package
 
+      # Re-extracted here: jobs don't share a filesystem, and verify already
+      # proved the section exists.
+      - name: Extract release notes
+        run: |
+          awk -v tag="## $GITHUB_REF_NAME" \
+            '$0 == tag { found = 1; next } found && /^## / { exit } found { print }' \
+            FORK_CHANGELOG.md > notes.md
+
       - name: Create GitHub release
         run: |
           gh release create "$GITHUB_REF_NAME" package/*.tgz \
             --title "$GITHUB_REF_NAME" \
-            --notes "Fork prerelease for VeloPlanner. See branch \`veloplanner\` for the included fixes."
+            --notes-file notes.md
         env:
           GH_TOKEN: ${{ github.token }}
