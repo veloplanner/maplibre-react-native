@@ -18,7 +18,21 @@ extracts the matching section as the GitHub release notes.
 
 ## Unreleased
 
-_Nothing yet._
+### Fixed
+
+- **android** — make the shared `LocationManager` listener list thread-safe
+  ([`f6e3b91`](https://github.com/veloplanner/maplibre-react-native/commit/f6e3b91d))
+
+  `LocationManager` is a process-wide singleton, but its listener list was a plain `ArrayList`
+  mutated from two threads: `MLRNLocationModule.start()/stop()` runs on the NativeModules thread
+  while host-lifecycle callbacks, `MLRNCamera`, and engine-callback iteration touch the list on
+  the main thread. Two concurrent removes both passed the `contains()` check and the loser
+  underflowed `ArrayList.fastRemove` — fatal `ArrayIndexOutOfBoundsException: index=-1` (Sentry
+  `VELOPLANNER_MOBILE-H0`). Iteration in `onLocationChanged` could likewise throw
+  `ConcurrentModificationException`. The list is now a `CopyOnWriteArrayList` with `addIfAbsent`:
+  add/remove are atomic and iteration is snapshot-based. Upstream `main` carries the same code.
+
+  _Upstream: not submitted._
 
 ## v11.3.6-veloplanner.3
 
