@@ -84,9 +84,10 @@ abstract class MLRNSource<T : Source?>(
                 style.addSource(source!!)
             }
 
-            if (mQueuedLayers != null && mQueuedLayers!!.isNotEmpty()) { // first load
-                for (i in mQueuedLayers!!.indices) {
-                    addLayerToMap(mQueuedLayers!![i], i)
+            val queuedLayers = mQueuedLayers
+            if (queuedLayers != null) { // first load
+                for (i in queuedLayers.indices) {
+                    addLayerToMap(queuedLayers[i], i)
                 }
                 mQueuedLayers = null
             } else if (mLayers.isNotEmpty()) { // handles the case of switching style url, but keeping layers on map
@@ -128,8 +129,12 @@ abstract class MLRNSource<T : Source?>(
             return
         }
 
-        if (mMap == null) {
-            mQueuedLayers!!.add(childPosition, childView)
+        // mMap is set before the style has loaded; keep queueing until addToMap's
+        // getStyle callback has flushed the queue, or the insert indexes past
+        // mLayers and the layer would never reach the style anyway.
+        val queuedLayers = mQueuedLayers
+        if (queuedLayers != null) {
+            queuedLayers.add(childPosition.coerceAtMost(queuedLayers.size), childView)
         } else {
             addLayerToMap(childView, childPosition)
         }
@@ -170,7 +175,7 @@ abstract class MLRNSource<T : Source?>(
         }
         layer.addToMap(mapView)
         if (!mLayers.contains(layer)) {
-            mLayers.add(childPosition, layer)
+            mLayers.add(childPosition.coerceAtMost(mLayers.size), layer)
         }
     }
 
