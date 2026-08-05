@@ -34,6 +34,26 @@ extracts the matching section as the GitHub release notes.
 
   _Upstream: not submitted._
 
+- **android** — queue source layers until the style-load flush
+  ([`8421a8b`](https://github.com/veloplanner/maplibre-react-native/commit/8421a8b5))
+
+  `MLRNSource.addToMap` sets `mMap` synchronously but flushes `mQueuedLayers` in the async
+  `getStyle` callback, so a layer child mounted while the style was still loading bypassed the
+  queue and inserted straight into `mLayers` at its Fabric child index — past the bounds of the
+  still-empty list (fatal `IndexOutOfBoundsException`, e.g. `Index: 3, Size: 0`, Sentry
+  `VELOPLANNER_MOBILE-B1`; typical trigger: the OSM route source mounting its layers in a
+  commit after the map, right during style load). Had it not crashed, the layer would never
+  have rendered either — `MLRNLayer.addToMap` no-ops without a style and nothing re-adds it.
+  `addLayer` now queues while `mQueuedLayers` is pending rather than only while `mMap` is null,
+  the first-load flush always nulls the queue (an empty queue previously survived forever), and
+  the `mLayers` bookkeeping insert clamps its index as a last-resort guard.
+
+  _PR note:_ completes upstream #1572 (`2c27f43f`), which guarded only the read paths
+  (`removeLayer`/`getLayerAt`); the add path still crashes on upstream `main`. Small,
+  self-contained upstream PR candidate.
+
+  _Upstream: not submitted._
+
 ## v11.3.6-veloplanner.3
 
 _2026-08-01 · base: upstream v11.3.6_
