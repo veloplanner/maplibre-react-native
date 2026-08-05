@@ -13,13 +13,17 @@ import org.maplibre.android.location.engine.LocationEngineResult
 import org.maplibre.android.location.permissions.PermissionsManager
 import org.maplibre.reactnative.location.engine.LocationEngineProvider
 import java.lang.ref.WeakReference
+import java.util.concurrent.CopyOnWriteArrayList
 
 class LocationManager private constructor(
     private val context: Context,
 ) : LocationEngineCallback<LocationEngineResult> {
     var engine: LocationEngine? = null
         private set
-    private val listeners: MutableList<OnUserLocationChange> = ArrayList<OnUserLocationChange>()
+
+    // Mutated from both the NativeModules thread (MLRNLocationModule start/stop) and the
+    // main thread (host lifecycle, MLRNCamera, engine callbacks) — must stay thread-safe
+    private val listeners = CopyOnWriteArrayList<OnUserLocationChange>()
     private val owners: MutableSet<Any> = mutableSetOf()
 
     private var mMinDisplacement = 0f
@@ -50,15 +54,13 @@ class LocationManager private constructor(
     }
 
     fun addLocationListener(listener: OnUserLocationChange?) {
-        if (!listeners.contains(listener)) {
-            listeners.add(listener!!)
-        }
+        listener ?: return
+        listeners.addIfAbsent(listener)
     }
 
     fun removeLocationListener(listener: OnUserLocationChange?) {
-        if (listeners.contains(listener)) {
-            listeners.remove(listener)
-        }
+        listener ?: return
+        listeners.remove(listener)
     }
 
     fun setMinDisplacement(minDisplacement: Float) {
