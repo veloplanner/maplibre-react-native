@@ -54,6 +54,26 @@ extracts the matching section as the GitHub release notes.
 
   _Upstream: not submitted._
 
+- **android** — track every map child and clamp child inserts
+
+  Fabric computes a map child's insert index from its own bookkeeping, but
+  `MLRNMapView.addFeature` silently dropped any child that was neither a recognized MLRN
+  feature nor a `ViewGroup` — every dropped child shifted the later siblings' indexes, and
+  once Fabric's and the native list's bookkeeping diverged, the unguarded
+  `children.add(childPosition, …)` threw a fatal `IndexOutOfBoundsException` during mount
+  (e.g. `Index: 7, Size: 5`, Sentry `VELOPLANNER_MOBILE-BV`, 200 users). The stale-index
+  read guards from upstream #1596 compound it: a silently skipped remove leaves the drift
+  in place instead of surfacing it. `addFeature` now tracks every `View` child (the map is
+  a `FrameLayout`, so `addView` accepts any view), and both bookkeeping inserts clamp to
+  the list size as a last-resort guard, logging when the clamp engages — a transiently
+  wrong child order instead of a crash.
+
+  _PR note:_ completes upstream #1596, which guarded only the read paths
+  (`removeFeature`/`getFeatureAt`); the add path still crashes on upstream `main`. Same
+  shape as the source-layer fix above — small, self-contained upstream PR candidate.
+
+  _Upstream: not submitted._
+
 ## v11.3.6-veloplanner.3
 
 _2026-08-01 · base: upstream v11.3.6_
