@@ -256,7 +256,11 @@ open class MLRNMapView(
                     MapChild.FeatureChild(childView)
                 }
 
-                is ViewGroup -> {
+                // Fabric computes child indexes from its own bookkeeping; a child
+                // missing from this list shifts every later sibling's index and a
+                // subsequent insert lands past the end of the list. Track every
+                // view, not just ViewGroups, so the two stay aligned.
+                is View -> {
                     MapChild.ViewChild(childView)
                 }
 
@@ -277,11 +281,25 @@ open class MLRNMapView(
                     }
                 }
 
-                children.add(childPosition, child)
+                children.add(clampChildPosition(childPosition, children.size), child)
             } else {
-                queuedChildren!!.add(childPosition, child)
+                queuedChildren!!.add(clampChildPosition(childPosition, queuedChildren!!.size), child)
             }
         }
+    }
+
+    // Last-resort guard: if Fabric's child bookkeeping ever diverges from ours
+    // (e.g. after a silently skipped stale remove), inserting at the raw index is
+    // a fatal IndexOutOfBounds — a transiently wrong child order is the lesser evil.
+    private fun clampChildPosition(
+        childPosition: Int,
+        size: Int,
+    ): Int {
+        if (childPosition > size) {
+            Logger.w(LOG_TAG, "addFeature: clamping child index $childPosition to list size $size")
+        }
+
+        return childPosition.coerceIn(0, size)
     }
 
     fun removeFeature(childPosition: Int) {
