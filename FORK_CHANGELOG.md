@@ -16,7 +16,9 @@ entry when the next `main` sync brings the change back.
 Section headings are the release tag verbatim — `.github/workflows/veloplanner-release.yml`
 extracts the matching section as the GitHub release notes.
 
-## Unreleased
+## v11.3.6-veloplanner.4
+
+_2026-08-28 · base: upstream v11.3.6_
 
 ### Fixed
 
@@ -55,6 +57,7 @@ extracts the matching section as the GitHub release notes.
   _Upstream: not submitted._
 
 - **android** — track every map child and clamp child inserts
+  ([`3b55366`](https://github.com/veloplanner/maplibre-react-native/commit/3b553668))
 
   Fabric computes a map child's insert index from its own bookkeeping, but
   `MLRNMapView.addFeature` silently dropped any child that was neither a recognized MLRN
@@ -73,6 +76,15 @@ extracts the matching section as the GitHub release notes.
   shape as the source-layer fix above — small, self-contained upstream PR candidate.
 
   _Upstream: not submitted._
+
+### Fork-only
+
+Not part of the published package.
+
+- Docs: FORK_CHANGELOG entries for the three fixes above
+  ([`d156818`](https://github.com/veloplanner/maplibre-react-native/commit/d156818b),
+  [`41ef397`](https://github.com/veloplanner/maplibre-react-native/commit/41ef3978),
+  [`36d3b32`](https://github.com/veloplanner/maplibre-react-native/commit/36d3b326))
 
 ## v11.3.6-veloplanner.3
 
