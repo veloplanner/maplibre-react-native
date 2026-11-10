@@ -29,6 +29,24 @@ class MLRNVectorSourceModule(
         reactTagResolver.withViewResolved(reactTag.toInt(), promise, fn)
     }
 
+    // Same guard as MLRNGeoJSONSourceModule.withRendererOnUIThread.
+    private fun withRendererOnUIThread(
+        reactTag: ReactTag,
+        promise: Promise,
+        fn: (MLRNVectorSource) -> Unit,
+    ) {
+        withViewportOnUIThread(reactTag, promise) { vectorSource ->
+            if (vectorSource.isRendererAvailable()) {
+                fn(vectorSource)
+            } else {
+                promise.reject(
+                    "renderer_unavailable",
+                    "Feature state unavailable: the map view is detached, paused, or its render thread has exited",
+                )
+            }
+        }
+    }
+
     override fun querySourceFeatures(
         reactTag: Double,
         sourceLayer: String,
@@ -52,7 +70,7 @@ class MLRNVectorSourceModule(
         state: ReadableMap,
         promise: Promise,
     ) {
-        withViewportOnUIThread(reactTag, promise) { vectorSource ->
+        withRendererOnUIThread(reactTag, promise) { vectorSource ->
             val jsonState = ConvertUtils.toJsonObject(state) ?: JsonObject()
 
             if (vectorSource.setFeatureState(sourceLayer, featureId, jsonState)) {
@@ -72,7 +90,7 @@ class MLRNVectorSourceModule(
         sourceLayer: String,
         promise: Promise,
     ) {
-        withViewportOnUIThread(reactTag, promise) { vectorSource ->
+        withRendererOnUIThread(reactTag, promise) { vectorSource ->
             promise.resolve(
                 vectorSource.getFeatureState(sourceLayer, featureId)?.let {
                     ConvertUtils.toWritableMap(it)
@@ -88,7 +106,7 @@ class MLRNVectorSourceModule(
         key: String?,
         promise: Promise,
     ) {
-        withViewportOnUIThread(reactTag, promise) { vectorSource ->
+        withRendererOnUIThread(reactTag, promise) { vectorSource ->
             if (vectorSource.removeFeatureState(sourceLayer, featureId, key)) {
                 promise.resolve(null)
             } else {

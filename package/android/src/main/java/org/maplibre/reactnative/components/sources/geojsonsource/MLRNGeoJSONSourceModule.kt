@@ -29,6 +29,27 @@ class MLRNGeoJSONSourceModule(
         reactTagResolver.withViewResolved(reactTag.toInt(), promise, fn)
     }
 
+    // Feature-state calls go through the renderer mailbox: getFeatureState blocks
+    // the UI thread on it with no timeout (ANR when the render thread can't serve
+    // it), and set/remove post a Renderer-targeted message that a dead render
+    // thread strands, wedging the mailbox. Reject instead of calling.
+    private fun withRendererOnUIThread(
+        reactTag: ReactTag,
+        promise: Promise,
+        fn: (MLRNGeoJSONSource) -> Unit,
+    ) {
+        withViewportOnUIThread(reactTag, promise) { shapeSource ->
+            if (shapeSource.isRendererAvailable()) {
+                fn(shapeSource)
+            } else {
+                promise.reject(
+                    "renderer_unavailable",
+                    "Feature state unavailable: the map view is detached, paused, or its render thread has exited",
+                )
+            }
+        }
+    }
+
     override fun getData(
         reactTag: Double,
         filter: ReadableArray?,
@@ -89,7 +110,7 @@ class MLRNGeoJSONSourceModule(
         state: ReadableMap,
         promise: Promise,
     ) {
-        withViewportOnUIThread(reactTag, promise) { shapeSource ->
+        withRendererOnUIThread(reactTag, promise) { shapeSource ->
             val jsonState = ConvertUtils.toJsonObject(state) ?: JsonObject()
 
             if (shapeSource.setFeatureState(featureId, jsonState)) {
@@ -108,7 +129,7 @@ class MLRNGeoJSONSourceModule(
         featureId: String,
         promise: Promise,
     ) {
-        withViewportOnUIThread(reactTag, promise) { shapeSource ->
+        withRendererOnUIThread(reactTag, promise) { shapeSource ->
             promise.resolve(
                 shapeSource.getFeatureState(featureId)?.let { ConvertUtils.toWritableMap(it) },
             )
@@ -121,7 +142,7 @@ class MLRNGeoJSONSourceModule(
         key: String?,
         promise: Promise,
     ) {
-        withViewportOnUIThread(reactTag, promise) { shapeSource ->
+        withRendererOnUIThread(reactTag, promise) { shapeSource ->
             if (shapeSource.removeFeatureState(featureId, key)) {
                 promise.resolve(null)
             } else {

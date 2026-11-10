@@ -44,7 +44,8 @@ import java.lang.reflect.Field
 //    outlived their 200 ms timeout and caused a use-after-free SIGSEGV
 //    (VELOPLANNER_MOBILE-GW) — is gated at source by
 //    MLRNAnnotationHitTestGuard. Async producers target the long-lived
-//    MapRenderer, not the Renderer.
+//    MapRenderer, not the Renderer — except feature-state set/remove, which
+//    the source modules gate with isRendererAvailable() as well.
 //
 // The guard also exposes render-thread liveness (isRenderThreadAlive) so
 // callers can refuse synchronous renderer round-trips that would park on a

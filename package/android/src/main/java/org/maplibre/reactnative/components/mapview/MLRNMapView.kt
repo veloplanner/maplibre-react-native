@@ -418,9 +418,9 @@ open class MLRNMapView(
     }
 
     // Whether a renderer round-trip (queryRenderedFeatures, querySourceFeatures,
-    // cluster queries, snapshot) can currently be served without risking a
-    // permanent main-thread block — see SurfaceViewRenderThreadGuard for the
-    // failure modes and the mailbox heal.
+    // cluster queries, feature state, snapshot) can currently be served without
+    // risking a permanent main-thread block — see SurfaceViewRenderThreadGuard
+    // for the failure modes and the mailbox heal.
     fun isRendererAvailable(): Boolean = !paused && !destroyed && isAttachedToWindow && (renderThreadGuard?.isRenderThreadAlive() ?: true)
 
     fun layerAdded(layer: Layer) {

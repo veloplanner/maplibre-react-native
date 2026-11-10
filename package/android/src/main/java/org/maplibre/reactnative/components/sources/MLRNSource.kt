@@ -98,6 +98,11 @@ abstract class MLRNSource<T : Source?>(
         }
     }
 
+    // For module calls that must reject rather than touch the renderer mailbox
+    // (see MLRNMapView.isRendererAvailable). True when not attached to a map, so
+    // callers fall through to their own not-attached handling.
+    fun isRendererAvailable(): Boolean = mMapView?.isRendererAvailable() != false
+
     override fun removeFromMap(mapView: MLRNMapView) {
         if (mLayers.isNotEmpty()) {
             for (i in mLayers.indices) {
