@@ -16,6 +16,61 @@ entry when the next `main` sync brings the change back.
 Section headings are the release tag verbatim — `.github/workflows/veloplanner-release.yml`
 extracts the matching section as the GitHub release notes.
 
+## v11.5.1-veloplanner.1
+
+_2026-11-10 · base: upstream v11.5.1_
+
+First release on the upstream v11.5.1 base (previously v11.3.6). Every entry below still marked
+`Upstream: not submitted` is carried forward.
+
+### Upstream sync
+
+- Merge upstream v11.3.7–v11.5.1
+  ([`7f6eae8`](https://github.com/veloplanner/maplibre-react-native/commit/7f6eae8c))
+
+  Brings MapLibre Native Android 13.6.1 and iOS 6.31.0, the feature state API on `GeoJSONSource`
+  and `VectorSource`, and the upstream fixes listed in [CHANGELOG.md](./CHANGELOG.md). One of them
+  is app-visible: on Android, `NativeUserLocation` now defaults to the normal render mode instead
+  of compass.
+
+  Four fork fixes returned through upstream and are no longer fork patches: the Android tap/query
+  ANR guards, the detach-reset guard and the camera `getStyle` NPE fix (upstream #1600, v11.3.8),
+  and the serialized iOS style image loads (upstream #1602, v11.3.9). Where the fork had grown
+  past the upstreamed code it keeps its own: `SurfaceViewRenderThreadGuard` stands in for
+  upstream's inline detach guard, and `isRendererAvailable()` for upstream's
+  paused/destroyed/attached checks.
+
+  The reflection-based guards (`SurfaceViewRenderThreadGuard`, `MLRNAnnotationHitTestGuard`) were
+  re-checked against MapLibre Native Android 13.6.1: the reflected fields and the mailbox
+  scheduling are unchanged, and on the OpenGL backend the Renderer is still reset on detach and
+  recreated on the same mailbox on re-attach.
+
+### Fixed
+
+- **android** — reject feature-state calls when the renderer is unavailable
+  ([`f51a0e5`](https://github.com/veloplanner/maplibre-react-native/commit/f51a0e59))
+
+  The feature state API added in upstream v11.5.0 goes through the renderer mailbox like the
+  queries the fork already guards. `getFeatureState` blocks the UI thread on it with no timeout —
+  an ANR whenever the render thread can't serve it — and `setFeatureState`/`removeFeatureState`
+  post a Renderer-targeted message that a dead render thread strands, wedging the mailbox and
+  leaving the message for the mailbox heal to replay into a recreated Renderer. On both
+  `GeoJSONSource` and `VectorSource` the three calls now reject with `renderer_unavailable` when
+  `isRendererAvailable()` is false (view detached, paused or destroyed, or render thread dead).
+  `getFeatureState` rejects rather than resolving `null`, which already means "no state".
+
+  _PR note:_ calls made while the host is paused reject instead of being queued for resume.
+
+  _Upstream: not submitted._
+
+### Fork-only
+
+Not part of the published package.
+
+- E2E: the Maestro `arrange` flow takes upstream's post-tap waits and keeps the fork's cold-start
+  wait
+- Tests: fork tests ported to the async `@testing-library/react-native` 14 API
+
 ## v11.3.6-veloplanner.4
 
 _2026-08-28 · base: upstream v11.3.6_
@@ -231,57 +286,9 @@ _2026-07-26 · base: upstream v11.3.6_
 
 _2026-07-23 · base: upstream v11.3.6_
 
-First fork prerelease.
-
-### Fixed
-
-- **android** — avoid ANR from synchronous `queryRenderedFeatures` when the render thread can't
-  serve it ([`3cbec71`](https://github.com/veloplanner/maplibre-react-native/commit/3cbec712))
-
-  `queryRenderedFeatures` posts to the render thread's event queue and blocks the caller on a
-  future. The render thread exits when the view is detached from the window and is only recreated
-  on re-attach, so a query posted in that window blocks the main thread forever. Taps are
-  especially exposed — `onSingleTapConfirmed` fires ~300 ms after the tap, so it can land after a
-  navigation transition detached the view. The worst path needed no annotations at all:
-  `createSymbolManager` ran unconditionally at style load and its `MapClickResolver` ran a
-  synchronous query on every tap. The `SymbolManager` is now created lazily on first
-  `getSymbolManager()` call, and the click/query paths are guarded by the paused/destroyed flags
-  plus `isAttachedToWindow`. Background:
-  [ANR-RENDER-THREAD-FINDINGS.md](./ANR-RENDER-THREAD-FINDINGS.md).
-
-  _Upstream: not submitted._
-
-- **android** — guard `MapLibreSurfaceView` detach reset against a dead render thread
-  ([`9d0eb7c`](https://github.com/veloplanner/maplibre-react-native/commit/9d0eb7cb))
-
-  `onDetachedFromWindow()` notifies its detached listener (→ `MapRenderer.nativeReset()`), which
-  blocks the main thread waiting on the render thread with no timeout. The reset runnable is queued
-  without a liveness check, so when the thread has already exited — a second detach without
-  re-attach in between, or an EGL-init crash — the task is silently swallowed and the main thread
-  hangs forever. Later folded into `SurfaceViewRenderThreadGuard` by `fe16b77a`.
-
-  _Upstream: not submitted_ — upstream together with `fe16b77a`.
-
-- **android** — use async `getStyle` in `setTrackUserLocation` to avoid an NPE during style load
-  ([`6911324`](https://github.com/veloplanner/maplibre-react-native/commit/69113243))
-
-  `MapLibreMap.getStyle()` returns null whenever the style isn't fully loaded, so a
-  `trackUserLocation` prop update landing in that window crashed on `style!!`. The async
-  `getStyle` callback — the same pattern `enableLocation` already uses in this class — applies the
-  update instead of crashing.
-
-  _Upstream: not submitted._
-
-- **ios** — serialize style image loads to avoid CUICatalog heap corruption
-  ([`926e97e`](https://github.com/veloplanner/maplibre-react-native/commit/926e97ed))
-
-  `MLRNImageQueueOperation` dispatched every image load onto the global concurrent queue. Local
-  bundle assets resolve synchronously there via `+[UIImage imageNamed:]`, and dozens of concurrent
-  lookups at map mount corrupted CUICatalog's lookup cache (malloc double-free in
-  `-[NSCache setName:]`). Loads now go through one serial queue; network loads only serialize
-  their kickoff, so downloads still overlap.
-
-  _Upstream: not submitted._
+First fork prerelease. Its four fixes have since landed upstream (#1600 in v11.3.8, #1602 in
+v11.3.9) and came back with the v11.5.1 sync, so their entries were dropped — see
+v11.5.1-veloplanner.1.
 
 ### Fork-only
 
