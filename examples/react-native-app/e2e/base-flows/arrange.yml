@@ -9,13 +9,19 @@ appId: org.maplibre.reactnative.example
     timeout: 60000
 
 - tapOn: "E2E Tests, ›"
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "MapLibre React Native > E2E Tests"
+    timeout: 20000
 
 - scrollUntilVisible:
     element:
       text: "${TEST_GROUP}, ›"
 - tapOn: "${TEST_GROUP}, ›"
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "MapLibre React Native > E2E Tests > ${TEST_GROUP}"
+    timeout: 20000
 
 - scrollUntilVisible:
     element:

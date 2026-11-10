@@ -1,3 +1,54 @@
+## [11.5.1](https://github.com/maplibre/maplibre-react-native/compare/v11.5.0...v11.5.1) (2026-10-29)
+
+### Bug Fixes
+
+- **Android:** default NativeUserLocation to normal mode and apply props after activation ([#1742](https://github.com/maplibre/maplibre-react-native/issues/1742)) ([9aeb9fd](https://github.com/maplibre/maplibre-react-native/commit/9aeb9fdfd0bc4dd2dc7c632669b383622ce99fb3))
+
+# [11.5.0](https://github.com/maplibre/maplibre-react-native/compare/v11.4.1...v11.5.0) (2026-10-04)
+
+### Features
+
+- add feature state API ([#1651](https://github.com/maplibre/maplibre-react-native/issues/1651)) ([a047317](https://github.com/maplibre/maplibre-react-native/commit/a0473179523d94b50dee4e2d910792fe7cabc2a7))
+
+## [11.4.1](https://github.com/maplibre/maplibre-react-native/compare/v11.4.0...v11.4.1) (2026-10-01)
+
+### Bug Fixes
+
+- **iOS:** only add MLRN SPM to requiring targets ([#1703](https://github.com/maplibre/maplibre-react-native/issues/1703)) ([d6bf679](https://github.com/maplibre/maplibre-react-native/commit/d6bf679f80352d5f7f14db639a669682256e8bf0))
+
+# [11.4.0](https://github.com/maplibre/maplibre-react-native/compare/v11.3.10...v11.4.0) (2026-09-19)
+
+### Features
+
+- **Android:** upgrade MapLibre Native to 13.6.1 ([#1652](https://github.com/maplibre/maplibre-react-native/issues/1652)) ([325d0ef](https://github.com/maplibre/maplibre-react-native/commit/325d0ef88354a7d06c19ab803a294fe2c173cbc0))
+- **iOS:** upgrade MapLibre Native to 6.31.0 ([#1653](https://github.com/maplibre/maplibre-react-native/issues/1653)) ([e23c7ab](https://github.com/maplibre/maplibre-react-native/commit/e23c7abda0d6a733960861fb1d489ebec7fd4575))
+
+## [11.3.10](https://github.com/maplibre/maplibre-react-native/compare/v11.3.9...v11.3.10) (2026-09-07)
+
+### Bug Fixes
+
+- **iOS:** GeoJSONSource recycling ([#1636](https://github.com/maplibre/maplibre-react-native/issues/1636)) ([0a32125](https://github.com/maplibre/maplibre-react-native/commit/0a32125926da459396ef53448afb243fbea8745b))
+
+## [11.3.9](https://github.com/maplibre/maplibre-react-native/compare/v11.3.8...v11.3.9) (2026-09-05)
+
+### Bug Fixes
+
+- **android:** skip explicit Kotlin plugin when AGP provides built-in Kotlin ([#1645](https://github.com/maplibre/maplibre-react-native/issues/1645)) ([07027b6](https://github.com/maplibre/maplibre-react-native/commit/07027b6b5e88df337ef3da33dfc72914de736a54))
+- **iOS:** serialize style image loads to avoid CUICatalog heap corruption ([#1602](https://github.com/maplibre/maplibre-react-native/issues/1602)) ([f07990c](https://github.com/maplibre/maplibre-react-native/commit/f07990c76fb7d59705155928e2cc6c8e75f4d9f1))
+
+## [11.3.8](https://github.com/maplibre/maplibre-react-native/compare/v11.3.7...v11.3.8) (2026-09-01)
+
+### Bug Fixes
+
+- **Android:** prevent two map ANR deadlocks and a camera NullPointerException ([#1600](https://github.com/maplibre/maplibre-react-native/issues/1600)) ([5f0e14b](https://github.com/maplibre/maplibre-react-native/commit/5f0e14bee6cdf5ff5a9a5248ede1e8fc2100104a))
+- **iOS:** prevent NaN edge insets from \_clippedPadding on zero-sized map view ([#1638](https://github.com/maplibre/maplibre-react-native/issues/1638)) ([3c3befd](https://github.com/maplibre/maplibre-react-native/commit/3c3befdb3d24c068a6918ae83b204840cf3cf656))
+
+## [11.3.7](https://github.com/maplibre/maplibre-react-native/compare/v11.3.6...v11.3.7) (2026-08-22)
+
+### Bug Fixes
+
+- **android:** shorten TransformRequestInterceptor log tag where SDK constrains ([#1601](https://github.com/maplibre/maplibre-react-native/issues/1601)) ([0ab0c7d](https://github.com/maplibre/maplibre-react-native/commit/0ab0c7d563413d53ad463ec971297d0ad63def9b))
+
 ## [11.3.6](https://github.com/maplibre/maplibre-react-native/compare/v11.3.5...v11.3.6) (2026-06-25)
 
 ### Bug Fixes

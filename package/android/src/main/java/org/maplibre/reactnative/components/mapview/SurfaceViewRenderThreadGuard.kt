@@ -6,7 +6,7 @@ import org.maplibre.android.log.Logger
 import org.maplibre.android.maps.renderer.surfaceview.MapLibreSurfaceView
 import java.lang.reflect.Field
 
-// Fork-only workaround for two MapLibre Native <= 13.2.0 render-thread defects,
+// Fork-only workaround for two MapLibre Native <= 13.6.1 render-thread defects,
 // kept out of MLRNMapView to minimize the diff against upstream:
 //
 // 1. Detach reset deadlock: MapLibreSurfaceView.onDetachedFromWindow() first

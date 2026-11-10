@@ -508,12 +508,6 @@ open class MLRNMapView(
         reflow()
 
         mapLibreMap.getStyle { style ->
-            // The SymbolManager (PointAnnotation support) is created lazily in
-            // getSymbolManager(): its AnnotationManager registers a MapClickResolver
-            // that runs a synchronous queryRenderedFeatures on every tap/long-press,
-            // which blocks the main thread forever (ANR) whenever the render thread
-            // cannot serve it. Register the map click listeners here instead — they
-            // used to be registered by createSymbolManager.
             mapLibreMap.addOnMapClickListener(this)
             mapLibreMap.addOnMapLongClickListener(this)
             setUpImage(style)
@@ -589,9 +583,6 @@ open class MLRNMapView(
                 }
             },
         )
-        // The SymbolManager's AnnotationManager just appended its MapClickResolver
-        // after this view's listeners. Re-register this view's listeners so the
-        // resolver keeps its original resolver-first priority for annotation clicks.
         mapLibreMap!!.removeOnMapClickListener(this)
         mapLibreMap!!.addOnMapClickListener(this)
         mapLibreMap!!.removeOnMapLongClickListener(this)

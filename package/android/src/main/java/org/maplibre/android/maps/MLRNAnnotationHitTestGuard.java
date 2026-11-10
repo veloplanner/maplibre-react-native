@@ -15,7 +15,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-// Fork-only workaround for a MapLibre Native <= 13.2.0 use-after-free on the
+// Fork-only workaround for a MapLibre Native <= 13.6.1 use-after-free on the
 // renderer (VELOPLANNER_MOBILE-GW), kept in this package because the types it
 // touches (AnnotationManager, Markers, ShapeAnnotations) are package-private.
 //

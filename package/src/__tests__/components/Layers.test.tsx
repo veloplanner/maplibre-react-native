@@ -60,7 +60,7 @@ describe("Layer Components", () => {
 
   layerTestCases.forEach(({ name, props: { type } }) => {
     describe(name, () => {
-      test("renders correctly with custom props", () => {
+      test("renders correctly with custom props", async () => {
         const testProps = {
           id: "custom-id",
           source: "custom-source",
@@ -92,7 +92,9 @@ describe("Layer Components", () => {
                 ...testProps,
               };
 
-        const { queryByTestId } = render(<Layer {...(layerProps as any)} />);
+        const { queryByTestId } = await render(
+          <Layer {...(layerProps as any)} />,
+        );
         const layer = queryByTestId(`mlrn-${type}-layer`);
         const { props } = layer!;
 
@@ -128,8 +130,8 @@ describe("Layer Components", () => {
       />
     );
 
-    test("keeps reactStyle identity when style props are value-equal", () => {
-      const { queryByTestId, rerender } = render(
+    test("keeps reactStyle identity when style props are value-equal", async () => {
+      const { queryByTestId, rerender } = await render(
         renderLineLayer({ "line-opacity": 0.9 }),
       );
       const firstReactStyle =
@@ -137,21 +139,21 @@ describe("Layer Components", () => {
 
       // Fresh but value-equal inline style objects must not produce a new
       // native style prop.
-      rerender(renderLineLayer({ "line-opacity": 0.9 }));
+      await rerender(renderLineLayer({ "line-opacity": 0.9 }));
 
       expect(queryByTestId("mlrn-line-layer")!.props.reactStyle).toBe(
         firstReactStyle,
       );
     });
 
-    test("recomputes reactStyle when style values change", () => {
-      const { queryByTestId, rerender } = render(
+    test("recomputes reactStyle when style values change", async () => {
+      const { queryByTestId, rerender } = await render(
         renderLineLayer({ "line-opacity": 0.9 }),
       );
       const firstReactStyle =
         queryByTestId("mlrn-line-layer")!.props.reactStyle;
 
-      rerender(renderLineLayer({ "line-opacity": 0.3 }));
+      await rerender(renderLineLayer({ "line-opacity": 0.3 }));
 
       const nextReactStyle = queryByTestId("mlrn-line-layer")!.props.reactStyle;
       expect(nextReactStyle).not.toBe(firstReactStyle);
