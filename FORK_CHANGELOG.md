@@ -23,6 +23,7 @@ _2026-11-12 · base: upstream v11.5.1_
 ### Fixed
 
 - **android** — add a layer once, from its latest placement only
+  ([`568c7b1`](https://github.com/veloplanner/maplibre-react-native/commit/568c7b18))
 
   A layer placed with `afterId`/`beforeId` against a layer that isn't on the map yet queues a
   waiter in `MLRNMapView`. Waiters were never dropped: not when a newer `afterId`/`beforeId`
