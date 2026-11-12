@@ -16,11 +16,26 @@ entry when the next `main` sync brings the change back.
 Section headings are the release tag verbatim — `.github/workflows/veloplanner-release.yml`
 extracts the matching section as the GitHub release notes.
 
-## v11.5.1-veloplanner.2
+## v11.5.1-veloplanner.3
 
 _2026-11-12 · base: upstream v11.5.1_
 
+`v11.5.1-veloplanner.2` was tagged but never released: its run failed on the iOS example's E2E
+flow, which this change doesn't touch. This release carries its fix too.
+
 ### Fixed
+
+- **android** — don't use a layer the previous style destroyed
+
+  A style change destroys the layers in it without telling their Java peers. A layer its source
+  didn't remove before the change (one with no source of its own) kept such a peer in `mLayer`,
+  and the next `afterId`/`beforeId` change used it: removing it segfaulted in `Layer::get`
+  (Sentry `VELOPLANNER_MOBILE-RZ`) and adding it threw "Cannot add layer twice". `MLRNLayer`
+  now records the style it added the layer to; when that's no longer the map's style, every
+  setter and `removeFromMap` first swaps in a fresh layer with the same style, filter and zoom
+  bounds, which the next placement adds.
+
+  _Upstream: not submitted._
 
 - **android** — add a layer once, from its latest placement only
   ([`568c7b1`](https://github.com/veloplanner/maplibre-react-native/commit/568c7b18))

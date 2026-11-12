@@ -49,6 +49,7 @@ class MLRNLayer(
     private var mMap: MapLibreMap? = null
     private var mLayer: Layer? = null
     private var mPendingPlacement: FoundLayerCallback? = null
+    private var mLayerStyle: Style? = null
     private var mMapView: MLRNMapView? = null
 
     var ID: String
@@ -67,6 +68,7 @@ class MLRNLayer(
 
     fun setSourceLayerID(sourceLayerID: String?) {
         mSourceLayerID = sourceLayerID
+        dropStaleLayer()
         if (mLayer != null) {
             applySourceLayer()
         }
@@ -77,6 +79,7 @@ class MLRNLayer(
             return
         }
         mAboveLayerID = aboveLayerID
+        dropStaleLayer()
         if (mLayer != null) {
             removeFromMap(mMapView!!)
             addAbove(mAboveLayerID!!)
@@ -88,6 +91,7 @@ class MLRNLayer(
             return
         }
         mBelowLayerID = belowLayerID
+        dropStaleLayer()
         if (mLayer != null) {
             removeFromMap(mMapView!!)
             addBelow(mBelowLayerID!!)
@@ -99,6 +103,7 @@ class MLRNLayer(
             return
         }
         mLayerIndex = layerIndex
+        dropStaleLayer()
         if (mLayer != null) {
             removeFromMap(mMapView!!)
             addAtIndex(mLayerIndex!!)
@@ -107,6 +112,7 @@ class MLRNLayer(
 
     fun setVisible(visible: Boolean) {
         mVisible = visible
+        dropStaleLayer()
         if (mLayer != null) {
             val visibility = if (mVisible) Property.VISIBLE else Property.NONE
             mLayer!!.setProperties(PropertyFactory.visibility(visibility))
@@ -115,6 +121,7 @@ class MLRNLayer(
 
     fun setMinZoomLevel(minZoomLevel: Double) {
         mMinZoomLevel = minZoomLevel
+        dropStaleLayer()
         if (mLayer != null) {
             mLayer!!.setMinZoom(minZoomLevel.toFloat())
         }
@@ -122,6 +129,7 @@ class MLRNLayer(
 
     fun setMaxZoomLevel(maxZoomLevel: Double) {
         mMaxZoomLevel = maxZoomLevel
+        dropStaleLayer()
         if (mLayer != null) {
             mLayer!!.setMaxZoom(maxZoomLevel.toFloat())
         }
@@ -129,6 +137,7 @@ class MLRNLayer(
 
     fun setReactStyle(reactStyle: ReadableMap?) {
         mReactStyle = reactStyle
+        dropStaleLayer()
         if (mLayer != null) {
             addStyles()
         }
@@ -137,6 +146,7 @@ class MLRNLayer(
     fun setFilter(readableFilterArray: ReadableArray?) {
         val filterExpression = from(readableFilterArray)
         mFilter = filterExpression
+        dropStaleLayer()
         if (mLayer != null) {
             if (mFilter != null) {
                 mHadFilter = true
@@ -265,12 +275,12 @@ class MLRNLayer(
 
         if (userLocationBackgroundLayer != null) {
             style.addLayerBelow(layer, userBackgroundID)
-            mMapView!!.layerAdded(layer)
+            added(style, layer)
             return
         }
 
         style.addLayer(layer)
-        mMapView!!.layerAdded(layer)
+        added(style, layer)
     }
 
     private fun addAbove(aboveLayerID: String) {
@@ -299,7 +309,7 @@ class MLRNLayer(
                     val l = mLayer ?: return
                     if (style.getLayer(l.id) != null) return
                     add(style, l)
-                    mMapView!!.layerAdded(l)
+                    added(style, l)
                 }
             }
         mPendingPlacement = callback
@@ -317,7 +327,7 @@ class MLRNLayer(
             idx = layerSize - 1
         }
         style.addLayerAt(l, idx)
-        mMapView!!.layerAdded(l)
+        added(style, l)
     }
 
     private fun insertLayer() {
@@ -356,8 +366,10 @@ class MLRNLayer(
         val existingLayer = style.getLayer(mID!!)
         if (existingLayer != null) {
             mLayer = existingLayer
+            mLayerStyle = style
         } else {
             mLayer = makeLayer()
+            mLayerStyle = null
             insertLayer()
         }
 
@@ -370,8 +382,33 @@ class MLRNLayer(
 
     override fun removeFromMap(mapView: MLRNMapView) {
         mPendingPlacement = null
+        dropStaleLayer()
         val layer = mLayer ?: return
         this.style?.removeLayer(layer)
+        mLayerStyle = null
+    }
+
+    private fun added(
+        style: Style,
+        layer: Layer,
+    ) {
+        mLayerStyle = style
+        mMapView!!.layerAdded(layer)
+    }
+
+    // A style change destroys the layers in it without telling their Java peers, so mLayer is
+    // only usable while the style it was added to is still the map's. A layer its source didn't
+    // remove before the change kept such a peer, and using it crashed: removing it segfaulted
+    // in Layer::get, adding it threw "Cannot add layer twice". It gets a fresh layer instead,
+    // off the map until its placement adds it.
+    private fun dropStaleLayer() {
+        val addedTo = mLayerStyle ?: return
+        if (mLayer == null || addedTo === style) return
+        mLayerStyle = null
+        mLayer = makeLayer()
+        addStyles()
+        if (mFilter != null) updateFilter(mFilter)
+        setZoomBounds()
     }
 
     private val style: Style?
