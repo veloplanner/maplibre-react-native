@@ -16,6 +16,27 @@ entry when the next `main` sync brings the change back.
 Section headings are the release tag verbatim — `.github/workflows/veloplanner-release.yml`
 extracts the matching section as the GitHub release notes.
 
+## v11.5.1-veloplanner.2
+
+_2026-11-12 · base: upstream v11.5.1_
+
+### Fixed
+
+- **android** — add a layer once, from its latest placement only
+
+  A layer placed with `afterId`/`beforeId` against a layer that isn't on the map yet queues a
+  waiter in `MLRNMapView`. Waiters were never dropped: not when a newer `afterId`/`beforeId`
+  placed the layer, not when the layer left the map, not when the style changed. When the target
+  finally arrived, every waiter fired, and the one for a layer already on the map threw
+  `CannotAddLayerException: Cannot add layer twice`, a fatal crash raised from the `afterId` prop
+  setter (Sentry `VELOPLANNER_MOBILE-S1`, after switching basemaps a few times). Each `MLRNLayer`
+  now keeps one pending placement, and any other waiter for it does nothing; the waiter also
+  skips a layer that's already on the map, `removeFromMap` drops the pending placement, and
+  `setReactMapStyle` clears the waiters along with the old style. `layerAdded` takes its waiters
+  off the list before calling them, since a waiter's add calls back into it.
+
+  _Upstream: not submitted._
+
 ## v11.5.1-veloplanner.1
 
 _2026-11-10 · base: upstream v11.5.1_

@@ -48,6 +48,7 @@ class MLRNLayer(
 
     private var mMap: MapLibreMap? = null
     private var mLayer: Layer? = null
+    private var mPendingPlacement: FoundLayerCallback? = null
     private var mMapView: MLRNMapView? = null
 
     var ID: String
@@ -273,33 +274,36 @@ class MLRNLayer(
     }
 
     private fun addAbove(aboveLayerID: String) {
-        mMapView!!.waitForLayer(
-            aboveLayerID,
-            object : FoundLayerCallback {
-                override fun found(layer: Layer?) {
-                    if (!hasInitialized()) return
-                    val style = this@MLRNLayer.style ?: return
-                    val l = mLayer ?: return
-                    style.addLayerAbove(l, aboveLayerID)
-                    mMapView!!.layerAdded(l)
-                }
-            },
-        )
+        placeWhenFound(aboveLayerID) { style, l -> style.addLayerAbove(l, aboveLayerID) }
     }
 
     private fun addBelow(belowLayerID: String) {
-        mMapView!!.waitForLayer(
-            belowLayerID,
+        placeWhenFound(belowLayerID) { style, l -> style.addLayerBelow(l, belowLayerID) }
+    }
+
+    // Only the latest placement may add the layer. A waiter queued for a target that wasn't on
+    // the map yet stays in the map view's list after a newer afterId/beforeId placed the layer,
+    // or after the layer left the map; when that target arrived, the stale waiter added the
+    // layer a second time and MapLibre threw "Cannot add layer twice" (a fatal crash).
+    private fun placeWhenFound(
+        targetID: String,
+        add: (Style, Layer) -> Unit,
+    ) {
+        val callback =
             object : FoundLayerCallback {
                 override fun found(layer: Layer?) {
+                    if (mPendingPlacement !== this) return
+                    mPendingPlacement = null
                     if (!hasInitialized()) return
                     val style = this@MLRNLayer.style ?: return
                     val l = mLayer ?: return
-                    style.addLayerBelow(l, belowLayerID)
+                    if (style.getLayer(l.id) != null) return
+                    add(style, l)
                     mMapView!!.layerAdded(l)
                 }
-            },
-        )
+            }
+        mPendingPlacement = callback
+        mMapView!!.waitForLayer(targetID, callback)
     }
 
     private fun addAtIndex(index: Int) {
@@ -365,6 +369,7 @@ class MLRNLayer(
     }
 
     override fun removeFromMap(mapView: MLRNMapView) {
+        mPendingPlacement = null
         val layer = mLayer ?: return
         this.style?.removeLayer(layer)
     }

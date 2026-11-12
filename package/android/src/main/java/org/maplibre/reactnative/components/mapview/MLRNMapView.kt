@@ -426,13 +426,12 @@ open class MLRNMapView(
     fun layerAdded(layer: Layer) {
         val layerId = layer.getId()
 
-        val callbacks = layerWaiters[layerId]
-        if (callbacks != null) {
-            for (callback in callbacks) {
-                callback.found(layer)
-            }
+        // Taken off the map first: a waiter's add calls back into layerAdded, which must not
+        // iterate or drop this list while it's being walked.
+        val callbacks = layerWaiters.remove(layerId) ?: return
+        for (callback in callbacks) {
+            callback.found(layer)
         }
-        layerWaiters.remove(layerId)
     }
 
     fun waitForLayer(
@@ -830,6 +829,9 @@ open class MLRNMapView(
 
             mapLibreMap?.let { map ->
                 removeAllSourcesFromMap()
+                // Waiters belong to the old style; the sources re-add their layers, and queue
+                // fresh waiters, once the new one loads.
+                layerWaiters.clear()
 
                 mapStyle?.let { style ->
                     map.setStyle(
