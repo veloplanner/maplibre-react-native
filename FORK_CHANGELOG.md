@@ -26,6 +26,7 @@ flow, which this change doesn't touch. This release carries its fix too.
 ### Fixed
 
 - **android** — don't use a layer the previous style destroyed
+  ([`8dee57a`](https://github.com/veloplanner/maplibre-react-native/commit/8dee57a3))
 
   A style change destroys the layers in it without telling their Java peers. A layer its source
   didn't remove before the change (one with no source of its own) kept such a peer in `mLayer`,
